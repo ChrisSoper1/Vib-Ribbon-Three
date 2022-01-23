@@ -11,5 +11,5 @@ module.exports = {
   devServer: {
     static: './dist',
   },
-  plugins: [new HtmlWebpackPlugin()],
+  plugins: [new HtmlWebpackPlugin()], // - Disabled so I can hack CSS for now
 };
