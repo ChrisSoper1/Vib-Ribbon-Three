@@ -12,6 +12,7 @@ import {
   BLOCK,
   BLOCKPIT,
   LINE,
+  LOOP,
   PIT,
   WAVE,
   featureWidth,
@@ -53,13 +54,15 @@ export class VibRibbonApplication {
   generateExampleLevel() {
     for (let i = 0; i < 30; i++) {
       let obj;
-      if (i === 2) {
+      if (i === 1) {
         obj = BLOCK.clone();
-      } else if (i === 4) {
+      } else if (i === 3) {
         obj = PIT.clone();
-      } else if (i === 6) {
+      } else if (i === 5) {
+        obj = LOOP.clone();
+      } else if (i === 7) {
         obj = WAVE.clone();
-      } else if (i === 8) {
+      } else if (i === 9) {
         obj = BLOCKPIT.clone();
       } else {
         obj = LINE.clone();
