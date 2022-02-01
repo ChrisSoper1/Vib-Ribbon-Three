@@ -12,5 +12,17 @@ module.exports = {
   devServer: {
     static: './dist',
   },
-  plugins: [new HtmlWebpackPlugin()], // - Disabled so I can hack CSS for now
+  plugins: [new HtmlWebpackPlugin()],
+  module: {
+    rules: [
+      {
+        test: /\.(png|jpe?g|gif|glb)$/i,
+        use: [
+          {
+            loader: 'file-loader',
+          },
+        ],
+      },
+    ],
+  },
 };

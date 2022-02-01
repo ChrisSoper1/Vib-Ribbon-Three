@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/ChrisSoper1/Vib-Ribbon-Three#readme",
   "dependencies": {
+    "file-loader": "^6.2.0",
     "three": "^0.136.0"
   },
   "devDependencies": {
