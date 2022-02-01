@@ -52,19 +52,21 @@ export class VibRibbonApplication {
 
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
 
-    this.modelLoaded = false;
-    this.generatePlayerModel();
+    this.modelLoaded = this.generatePlayerModel();
     this.tempo = 100;  // set inside level generation?
     this.generateExampleLevel();
   }
 
   start() {
-    if (!this.modelLoaded) {
-      console.log("model not loaded yet, trying again in 1 second...");
-      window.setTimeout(() => this.start(), 1000);
-    } else {
+    this.modelLoaded.then(() => {
       this.animate();
-    }
+    })
+    // if (!this.modelLoaded) {
+    //   console.log("model not loaded yet, trying again in 1 second...");
+    //   window.setTimeout(() => this.start(), 1000);
+    // } else {
+    //   this.animate();
+    // }
   }
 
   animate() {
@@ -108,7 +110,11 @@ export class VibRibbonApplication {
 
   generatePlayerModel() {
     const loader = new GLTFLoader();
-    loader.load('./Soldier.glb', (gltf) => {
+    // convert callback to async by allowing promise to generate callback functions
+    let result = new Promise(resolve => loader.load('./Soldier.glb', resolve));
+
+    // Add a .then to the handling chain, and then set result to the new chain
+    result = result.then(gltf => {
       this.playerModel = gltf.scene;
       this.playerModel.scale.set(10, 10, 10);
       this.playerModel.position.set(0, 0, 0);
@@ -130,9 +136,11 @@ export class VibRibbonApplication {
       this.walkAction.play();
       // this.runAction.play();
 
-      this.modelLoaded = true;
       console.log("Model Loaded!");
     });
+
+    // Return the promise for further processing
+    return result;
   }
 
   /**
