@@ -11,6 +11,7 @@ import {
   WebGLRenderer,
 } from "three/src/Three";
 
+import Stats from 'three/examples/jsm/libs/stats.module';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {MapControls} from "three/examples/jsm/controls/OrbitControls";
 
@@ -28,45 +29,38 @@ import {
 
 export class VibRibbonApplication {
   constructor() {
+
+    // Variables which should be reused each animation cycle
+    this.playerWorldPos = new Vector3();
+
     this.renderer = new WebGLRenderer({antialias: true});
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(window.innerWidth * 0.99, window.innerHeight * 0.95);
     this.renderer.outputEncoding = sRGBEncoding;
     this.renderer.shadowMap.enabled = true;
     document.body.appendChild(this.renderer.domElement);
+    this.stats = Stats();
+    document.body.appendChild(this.stats.dom);
 
     this.clock = new Clock();
     this.scene = new Scene();
-    // this.camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    this.camera = new OrthographicCamera(0, 50, 20, -10, -1000, 1000);
+    this.camera = new OrthographicCamera(0, 50, 20, -10, -10000, 10000);
 
     this.camera.position.set(0, 0, 5);
-    this.cameraOffset = new Vector3(0, 0, 5);
     this.camera.zoom = 0.2;
     this.camera.updateProjectionMatrix();
     this.camera.lookAt(0, 0, 0);
-    this.playerVelocity = new Vector3(1, 0, 0).multiplyScalar(7);
-
-    // this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls = new MapControls(this.camera, this.renderer.domElement);
 
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
 
     this.modelLoaded = this.generatePlayerModel();
-    this.tempo = 100;  // set inside level generation?
     this.generateExampleLevel();
   }
 
   start() {
     this.modelLoaded.then(() => {
       this.animate();
-    })
-    // if (!this.modelLoaded) {
-    //   console.log("model not loaded yet, trying again in 1 second...");
-    //   window.setTimeout(() => this.start(), 1000);
-    // } else {
-    //   this.animate();
-    // }
+    });
   }
 
   animate() {
@@ -80,10 +74,13 @@ export class VibRibbonApplication {
     // update position
     this.playerModel.translateOnAxis(new Vector3(0, 0, -1), timeDelta * 20);
 
-    // Allow the controls to update the camera
-    this.controls.update();
+    this.playerModel.getWorldPosition(this.playerWorldPos);
+    this.camera.left = this.playerWorldPos.x;
+    this.camera.right = this.camera.left + 50;
+    this.camera.updateProjectionMatrix();
 
     this.renderer.render(this.scene, this.camera);
+    this.stats.update();
   }
 
   generateExampleLevel() {
@@ -142,15 +139,4 @@ export class VibRibbonApplication {
     // Return the promise for further processing
     return result;
   }
-
-  /**
-   * This was copied in from the example, and may not be important
-   */
-  setAnimationWeight(action, weight) {
-    action.enabled = true;
-    action.paused = false;
-    action.setEffectiveTimeScale(1);
-    action.setEffectiveWeight(weight);
-  }
-
 }
