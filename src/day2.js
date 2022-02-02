@@ -14,6 +14,7 @@ import {
 import Stats from 'three/examples/jsm/libs/stats.module';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {MapControls} from "three/examples/jsm/controls/OrbitControls";
+import {sharedDebugPanel} from "./utils/debug_panel";
 
 const solder_model = require('./assets/Soldier.glb');
 
@@ -39,8 +40,27 @@ export class VibRibbonApplication {
     this.renderer.outputEncoding = sRGBEncoding;
     this.renderer.shadowMap.enabled = true;
     document.body.appendChild(this.renderer.domElement);
+
     this.stats = Stats();
     document.body.appendChild(this.stats.dom);
+
+    this.inputKeyCodes = {
+      BLOCK: 'ArrowUp',
+      PIT: 'ArrowDown',
+      LOOP: 'ArrowLeft',
+      WAVE: 'ArrowRight',
+    };
+
+    this.keysPressed = {
+      BLOCK: false,
+      PIT: false,
+      LOOP: false,
+      WAVE: false,
+    };
+
+    // controls
+    window.addEventListener('keydown', (event) => this.onKeyDown(event));
+    window.addEventListener('keyup', (event) => this.onKeyUp(event));
 
     this.clock = new Clock();
     this.scene = new Scene();
@@ -55,6 +75,8 @@ export class VibRibbonApplication {
 
     this.modelLoaded = this.generatePlayerModel();
     this.generateExampleLevel();
+    sharedDebugPanel.addLoggerCallback(() => this.logControls());
+    sharedDebugPanel.enable();
   }
 
   start() {
@@ -74,13 +96,58 @@ export class VibRibbonApplication {
     // update position
     this.playerModel.translateOnAxis(new Vector3(0, 0, -1), timeDelta * 20);
 
+    // Update camera
     this.playerModel.getWorldPosition(this.playerWorldPos);
     this.camera.left = this.playerWorldPos.x;
     this.camera.right = this.camera.left + 50;
     this.camera.updateProjectionMatrix();
 
+    sharedDebugPanel.update();
     this.renderer.render(this.scene, this.camera);
     this.stats.update();
+  }
+
+  onKeyDown(event) {
+    let needsUpdate = false;
+    switch (event.code) {
+      case this.inputKeyCodes.BLOCK:
+        this.keysPressed.BLOCK = true;
+        needsUpdate = true;
+        break;
+      case this.inputKeyCodes.PIT:
+        this.keysPressed.PIT = true;
+        needsUpdate = true;
+        break;
+      case this.inputKeyCodes.LOOP:
+        this.keysPressed.LOOP = true;
+        needsUpdate = true;
+        break;
+      case this.inputKeyCodes.WAVE:
+        this.keysPressed.WAVE = true;
+        needsUpdate = true;
+        break;
+    }
+    if (needsUpdate) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+
+  onKeyUp(event) {
+    switch (event.code) {
+      case this.inputKeyCodes.BLOCK:
+        this.keysPressed.BLOCK = false;
+        break;
+      case this.inputKeyCodes.PIT:
+        this.keysPressed.PIT = false;
+        break;
+      case this.inputKeyCodes.LOOP:
+        this.keysPressed.LOOP = false;
+        break;
+      case this.inputKeyCodes.WAVE:
+        this.keysPressed.WAVE = false;
+        break;
+    }
   }
 
   generateExampleLevel() {
@@ -138,5 +205,15 @@ export class VibRibbonApplication {
 
     // Return the promise for further processing
     return result;
+  }
+
+  logControls() {
+    return `<table>
+    <tr><th colspan="2">Controls</th></tr>
+    <tr><th>BLOCK</th><td>${this.keysPressed.BLOCK}</td></tr>
+    <tr><th>PIT</th><td>${this.keysPressed.PIT}</td></tr>
+    <tr><th>LOOP</th><td>${this.keysPressed.LOOP}</td></tr>
+    <tr><th>WAVE</th><td>${this.keysPressed.WAVE}</td></tr>
+    </table>`;
   }
 }
