@@ -30,59 +30,63 @@ export class AudioAnalyser {
   getRectifiedSpectralFlux() {
     let sumf = 0;
     // can break this into multiple frequency ranges
-    for(let i = 0; i < this.fData.length; i++){
-        sumf += Math.max(0, this.fData[i] - this.fDataPrevious[i]);
+    for (let i = 0; i < this.fData.length; i++) {
+      sumf += Math.max(0, this.fData[i] - this.fDataPrevious[i]);
     }
     return sumf;
   }
 
-  updateSpectralFluxSamples(){
+  updateSpectralFluxSamples() {
     this.getFrequencyData();
     let spectrumData = {
-        "time": null,
-        "spectralFlux": null,
-        "threshold": null,
-        "prunedSpectralFlux": null,
-        "isPeak": null
+      "time": null,
+      "spectralFlux": null,
+      "threshold": null,
+      "prunedSpectralFlux": null,
+      "isPeak": null,
     };
     this.spectralFluxSamples.push(spectrumData);
     spectrumData.spectralFlux = this.getRectifiedSpectralFlux(this.indexToProcess);
 
-    if (this.spectralFluxSamples.length >= this.thresholdWindowSize){
-        this.spectralFluxSamples[this.indexToProcess].threshold = this.getFluxThreshold(this.indexToProcess);
-        this.spectralFluxSamples[this.indexToProcess].prunedSpectralFlux = this.getPrunedSpectralFlux(this.indexToProcess);
-        let indexToDetectPeak = this.indexToProcess- 1;
-        this.spectralFluxSamples[indexToDetectPeak].isPeak = this.isPeak(indexToDetectPeak);
-        this.indexToProcess++;
+    if (this.spectralFluxSamples.length >= this.thresholdWindowSize) {
+      this.spectralFluxSamples[this.indexToProcess].threshold = this.getFluxThreshold(this.indexToProcess);
+      this.spectralFluxSamples[this.indexToProcess].prunedSpectralFlux = this.getPrunedSpectralFlux(this.indexToProcess);
+      let indexToDetectPeak = this.indexToProcess - 1;
+      this.spectralFluxSamples[indexToDetectPeak].isPeak = this.isPeak(indexToDetectPeak);
+      this.indexToProcess++;
     }
   }
 
-  getFluxThreshold(spectralFluxIndex){
-    let windowStartIndex = Math.max(0, spectralFluxIndex - this.thresholdWindowSize /2);
-    let windowEndIndex = Math.min(this.spectralFluxSamples.length -1, spectralFluxIndex + this.thresholdWindowSize/2)
+  getFluxThreshold(spectralFluxIndex) {
+    let windowStartIndex = Math.max(0, spectralFluxIndex - this.thresholdWindowSize / 2);
+    let windowEndIndex = Math.min(this.spectralFluxSamples.length - 1, spectralFluxIndex + this.thresholdWindowSize
+                                                                       / 2);
 
     let spectralFluxSum = 0;
-    for(let i = windowStartIndex; i < windowEndIndex; i++){
-        spectralFluxSum += this.spectralFluxSamples[i].spectralFlux;
+    for (let i = windowStartIndex; i < windowEndIndex; i++) {
+      spectralFluxSum += this.spectralFluxSamples[i].spectralFlux;
     }
     let avgf = spectralFluxSum / (windowEndIndex - windowStartIndex);
-    console.log({spectralFluxSum, windowStartIndex, windowEndIndex, avgf})
+    console.log({spectralFluxSum, windowStartIndex, windowEndIndex, avgf});
     return avgf * this.thresholdMultiplier;
   }
 
   getPrunedSpectralFlux(spectralFluxIndex) {
-		return Math.max (
-		    0,
-		    this.spectralFluxSamples[spectralFluxIndex].spectralFlux - this.spectralFluxSamples[spectralFluxIndex].threshold
-		);
+    return Math.max(
+      0,
+      this.spectralFluxSamples[spectralFluxIndex].spectralFlux - this.spectralFluxSamples[spectralFluxIndex].threshold,
+    );
   }
 
-   isPeak(spectralFluxIndex){
-		return(
-		    this.spectralFluxSamples[spectralFluxIndex].prunedSpectralFlux > this.spectralFluxSamples[spectralFluxIndex + 1].prunedSpectralFlux &&
-			this.spectralFluxSamples[spectralFluxIndex].prunedSpectralFlux > this.spectralFluxSamples[spectralFluxIndex - 1].prunedSpectralFlux
-			)
-    }
+  isPeak(spectralFluxIndex) {
+    return (
+      this.spectralFluxSamples[spectralFluxIndex].prunedSpectralFlux > this.spectralFluxSamples[spectralFluxIndex
+                                                                                                + 1].prunedSpectralFlux
+      &&
+      this.spectralFluxSamples[spectralFluxIndex].prunedSpectralFlux > this.spectralFluxSamples[spectralFluxIndex
+                                                                                                - 1].prunedSpectralFlux
+    );
+  }
 
 
   getAverageFrequency() {
@@ -97,29 +101,29 @@ export class AudioAnalyser {
   getAverageAmplitude() {
     let value = 0;
     const data = this.getTimeDomainData();
-    return Math.max(...data)
+    return Math.max(...data);
     for (let i = 0; i < data.length; i++) {
       value += data[i];
     }
     return value / data.length;
   }
 
-    logSpectralFluxSamples() {
-    try{
-    return `<table>
-    <tr><th colspan="2">SpectralFluxSamples</th></tr>
-    <tr><th>isPeak</th><td>${this.spectralFluxSamples[this.indexToProcess-5].isPeak}</td></tr>
-     <tr><th>isPeak</th><td>${this.spectralFluxSamples[this.indexToProcess-4].isPeak}</td></tr>
-      <tr><th>isPeak</th><td>${this.spectralFluxSamples[this.indexToProcess-3].isPeak}</td></tr>
-       <tr><th>isPeak</th><td>${this.spectralFluxSamples[this.indexToProcess-2].isPeak}</td></tr>
-    <tr><th>prunedSpectralFlux</th><td>${parseFloat(this.spectralFluxSamples[this.indexToProcess-2].prunedSpectralFlux).toFixed(3)}</td></tr>
-    <tr><th>spectralFlux</th><td>${this.spectralFluxSamples[this.indexToProcess-2].spectralFlux}</td></tr>
-    <tr><th>threshold</th><td>${parseFloat(this.spectralFluxSamples[this.indexToProcess-2].threshold).toFixed(3)}</td></tr>
-    <tr><th>sampleLength</th><td>${this.spectralFluxSamples.length}</td></tr>
+  logSpectralFluxSamples() {
+    try {
+      return `<table>
+      <tr><th colspan="2">SpectralFluxSamples</th></tr>
+      <tr><th>isPeak</th><td>${this.spectralFluxSamples[this.indexToProcess - 5].isPeak}</td></tr>
+      <tr><th>isPeak</th><td>${this.spectralFluxSamples[this.indexToProcess - 4].isPeak}</td></tr>
+      <tr><th>isPeak</th><td>${this.spectralFluxSamples[this.indexToProcess - 3].isPeak}</td></tr>
+      <tr><th>isPeak</th><td>${this.spectralFluxSamples[this.indexToProcess - 2].isPeak}</td></tr>
+      <tr><th>prunedSpectralFlux</th><td>${parseFloat(this.spectralFluxSamples[this.indexToProcess
+                                                                               - 2].prunedSpectralFlux).toFixed(3)}</td></tr>
+      <tr><th>spectralFlux</th><td>${this.spectralFluxSamples[this.indexToProcess - 2].spectralFlux}</td></tr>
+      <tr><th>threshold</th><td>${parseFloat(this.spectralFluxSamples[this.indexToProcess - 2].threshold).toFixed(3)}</td></tr>
+      <tr><th>sampleLength</th><td>${this.spectralFluxSamples.length}</td></tr>
     </table>`;
-    }
-    catch {
-        return `<table>
+    } catch {
+      return `<table>
         <tr><th colspan="2">SpectralFluxSamples</th></tr>
         </table>`;
     }
