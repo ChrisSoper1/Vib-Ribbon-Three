@@ -58,7 +58,7 @@ export class SonicVisualizer {
     this.positionArray = new Uint8Array(fftSize / 2);
     this.positionAttribute = new BufferAttribute(this.positionArray, 3);
     this.geometry.setAttribute('position', this.positionAttribute);
-    this.mesh = new Points(this.geometry, new PointsMaterial({"color": 0xFFFFFF}));
+    this.mesh = new Points(this.geometry, new PointsMaterial({"color": 0xFFFFFF, size: 5}));
     this.mesh.scale.set(4,1,1)
     this.scene.add(this.mesh);
 
@@ -99,15 +99,20 @@ export class SonicVisualizer {
   }
 
   animate() {
-    requestAnimationFrame(() => this.animate());
-    this.analyser.getTimeDomainData();
-    this.analyser.getFrequencyData();
-    this.analyser.updateSpectralFluxSamples();
-    this.drawPoints();
-    this.drawPointsT();
-    sharedDebugPanel.update();
-    //console.log(this.analyser.getAverageAmplitude());
-    this.renderer.render(this.scene, this.camera);
+    try {
+      this.analyser.getTimeDomainData();
+      this.analyser.getFrequencyData();
+      this.analyser.updateSpectralFluxSamples();
+      this.drawPoints();
+      this.drawPointsT();
+      sharedDebugPanel.update();
+      //console.log(this.analyser.getAverageAmplitude());
+      this.renderer.render(this.scene, this.camera);
+      requestAnimationFrame(() => this.animate());
+    } catch (error){
+      console.log(error);
+      console.log("Broke");
+    }
   }
 
   drawPoints() {
