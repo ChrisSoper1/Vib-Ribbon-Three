@@ -10,7 +10,7 @@ export class AudioAnalyser {
     this.spectralFluxSamples = [];
     this.thresholdWindowSize = 30;
     this.indexToProcess = this.thresholdWindowSize / 2;
-    this.thresholdMultiplier = 1.5;
+    this.thresholdMultiplier = 1.2;
     //this.rollingFData = [];
     sharedDebugPanel.addLoggerCallback(() => this.logSpectralFluxSamples());
     sharedDebugPanel.enable();
@@ -108,10 +108,13 @@ export class AudioAnalyser {
     try{
     return `<table>
     <tr><th colspan="2">SpectralFluxSamples</th></tr>
-    <tr><th>isPeak</th><td>${this.spectralFluxSamples[50].isPeak}</td></tr>
-    <tr><th>prunedSpectralFlux</th><td>${this.spectralFluxSamples[50].prunedSpectralFlux}</td></tr>
-    <tr><th>spectralFlux</th><td>${this.spectralFluxSamples[50].spectralFlux}</td></tr>
-    <tr><th>threshold</th><td>${this.spectralFluxSamples[50].threshold}</td></tr>
+    <tr><th>isPeak</th><td>${this.spectralFluxSamples[this.indexToProcess-5].isPeak}</td></tr>
+     <tr><th>isPeak</th><td>${this.spectralFluxSamples[this.indexToProcess-4].isPeak}</td></tr>
+      <tr><th>isPeak</th><td>${this.spectralFluxSamples[this.indexToProcess-3].isPeak}</td></tr>
+       <tr><th>isPeak</th><td>${this.spectralFluxSamples[this.indexToProcess-2].isPeak}</td></tr>
+    <tr><th>prunedSpectralFlux</th><td>${parseFloat(this.spectralFluxSamples[this.indexToProcess-2].prunedSpectralFlux).toFixed(3)}</td></tr>
+    <tr><th>spectralFlux</th><td>${this.spectralFluxSamples[this.indexToProcess-2].spectralFlux}</td></tr>
+    <tr><th>threshold</th><td>${parseFloat(this.spectralFluxSamples[this.indexToProcess-2].threshold).toFixed(3)}</td></tr>
     <tr><th>sampleLength</th><td>${this.spectralFluxSamples.length}</td></tr>
     </table>`;
     }
