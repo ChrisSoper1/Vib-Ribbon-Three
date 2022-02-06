@@ -59,14 +59,15 @@ export class AudioAnalyser {
 
   getFluxThreshold(spectralFluxIndex){
     let windowStartIndex = Math.max(0, spectralFluxIndex - this.thresholdWindowSize /2);
-    let windowEndIndex = Math.min(this.spectralFluxSamples.length -1, spectralFluxIndex + this.thresholdWindow/2)
+    let windowEndIndex = Math.min(this.spectralFluxSamples.length -1, spectralFluxIndex + this.thresholdWindowSize/2)
 
     let spectralFluxSum = 0;
     for(let i = windowStartIndex; i < windowEndIndex; i++){
-        spectralFluxSum += this.spectralFluxSamples[i];
+        spectralFluxSum += this.spectralFluxSamples[i].spectralFlux;
     }
-    let avg = spectralFluxSum / (windowEndIndex - windowStartIndex);
-    return avg * this.thresholdMultiplier;
+    let avgf = spectralFluxSum / (windowEndIndex - windowStartIndex);
+    console.log({spectralFluxSum, windowStartIndex, windowEndIndex, avgf})
+    return avgf * this.thresholdMultiplier;
   }
 
   getPrunedSpectralFlux(spectralFluxIndex) {
