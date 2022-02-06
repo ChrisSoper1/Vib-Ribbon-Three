@@ -28,8 +28,10 @@ import {
 
 import {AudioAnalyser} from './AudioAnalyzer';
 
+import {sharedDebugPanel} from "../utils/debug_panel";
+
 const fftSize = 1024;
-const audioFile = './Sam_and_Dave-Hold_on_Im_coming.mp3';
+const audioFile = './A History of Bad Men.mp3';
 
 export class SonicVisualizer {
   constructor() {
@@ -100,9 +102,11 @@ export class SonicVisualizer {
     requestAnimationFrame(() => this.animate());
     this.analyser.getTimeDomainData();
     this.analyser.getFrequencyData();
+    this.analyser.updateSpectralFluxSamples();
     this.drawPoints();
     this.drawPointsT();
-    console.log(this.analyser.getAverageAmplitude());
+    sharedDebugPanel.update();
+    //console.log(this.analyser.getAverageAmplitude());
     this.renderer.render(this.scene, this.camera);
   }
 
