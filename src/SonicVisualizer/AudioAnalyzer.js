@@ -10,12 +10,12 @@ export class AudioAnalyser {
     this.fDataPrevious = new Uint8Array(this.analyser.frequencyBinCount);
 
     this.spectralFluxSamples = [];
+
     // PPM Window Size of 20 approx is 10 secs on MBP
     this.ppmWindowSize = 20;
     this.thresholdWindowSize = 30;
     this.indexToProcess = this.thresholdWindowSize / 2;
     this.thresholdMultiplier = 1.2;
-    //this.rollingFData = [];
 
     // For feature analysis
     this.featureBinSize = Math.floor(this.fData.length / 4);
@@ -25,17 +25,34 @@ export class AudioAnalyser {
     sharedDebugPanel.enable();
   }
 
+  /**
+   * Update this.fData with the frequency-domain data for the current frame
+   *
+   * @returns {Uint8Array}
+   */
   getFrequencyData() {
     this.analyser.getByteFrequencyData(this.fData);
     this.fData.copyWithin(this.fDataPrevious, 0);
     return this.fData;
   }
 
+  /**
+   * Update this.tData with the time-domain data for the current frame
+   *
+   * @returns {Uint8Array}
+   */
   getTimeDomainData() {
     this.analyser.getByteTimeDomainData(this.tData);
     return this.tData;
   }
 
+  /**
+   * Return relative (rectified) spectralFlux between the current frame and the previous
+   *
+   * @param inputArray
+   * @param previousInputArray
+   * @returns {number}
+   */
   getRectifiedSpectralFlux(inputArray, previousInputArray) {
     let sumf = 0;
     // can break this into multiple frequency ranges
@@ -45,12 +62,14 @@ export class AudioAnalyser {
     return sumf;
   }
 
+  /**
+   * Primary update method
+   */
   updateSpectralFluxSamples() {
     this.getFrequencyData();
     let spectrumData = {
       "time": this.audioContext.getOutputTimestamp().contextTime,
       "ppmEstimate": null,
-      ppmEstimationWindow: null,
       "spectralFlux": null,
       "spectralBinData": [{}, {}, {}, {}],
       "threshold": null,
@@ -79,6 +98,12 @@ export class AudioAnalyser {
     }
   }
 
+  /**
+   * Return a dynamic thresholding value for the spectralFlux for a frame
+   *
+   * @param spectralFluxIndex
+   * @returns {number}
+   */
   getFluxThreshold(spectralFluxIndex) {
     let windowStartIndex = Math.max(0, spectralFluxIndex - this.thresholdWindowSize / 2);
     let windowEndIndex = Math.min(
@@ -94,6 +119,12 @@ export class AudioAnalyser {
     return avgf * this.thresholdMultiplier;
   }
 
+  /**
+   * Return the threshold-clipped spectralFlux for a frame.
+   *
+   * @param spectralFluxIndex
+   * @returns {number}
+   */
   getPrunedSpectralFlux(spectralFluxIndex) {
     return Math.max(
       0,
@@ -101,6 +132,12 @@ export class AudioAnalyser {
     );
   }
 
+  /**
+   * Calculate if a frame is a "peak"
+   *
+   * @param spectralFluxIndex
+   * @returns {boolean}
+   */
   isPeak(spectralFluxIndex) {
     return (
       this.spectralFluxSamples[spectralFluxIndex].prunedSpectralFlux >
@@ -112,6 +149,9 @@ export class AudioAnalyser {
 
   /**
    * Calculate an estimated current PPM (peaks per minute)
+   *
+   * @param spectralFluxIndex
+   * @returns {number}
    */
   estimatePPM(spectralFluxIndex) {
     let estimationWindow = this.spectralFluxSamples.slice(
@@ -123,10 +163,6 @@ export class AudioAnalyser {
     let time_window = estimationWindow[estimationWindow.length - 1].time - estimationWindow[0].time;
     let multiplier = 60 / time_window;
 
-    // TODO: This BAD
-    // Add debug info to the flux sample directly
-    this.spectralFluxSamples[spectralFluxIndex].ppmEstimationWindow = time_window;
-
     let numPeaks = estimationWindow
       .map(value => value.isPeak)
       .reduce((previous, value) => value ? previous + 1 : previous, 0);
@@ -136,6 +172,11 @@ export class AudioAnalyser {
     return ppm;
   }
 
+  /**
+   * Calculate rectifiedSpectralFlux for discrete bins in fData
+   *
+   * @returns {Number[][]}
+   */
   getfDataBinned() {
     let outputBins = [];
 
@@ -144,11 +185,11 @@ export class AudioAnalyser {
 
       this.currentFeatureBin = this.fData.slice(
         this.featureBinSize * i,
-        this.featureBinSize * (i+1),
+        this.featureBinSize * (i + 1),
       );
       this.prevFeatureBin = this.fDataPrevious.slice(
         this.featureBinSize * i,
-        this.featureBinSize * (i+1),
+        this.featureBinSize * (i + 1),
       );
 
       // this.fDataPrevious.copyWithin(
@@ -157,12 +198,16 @@ export class AudioAnalyser {
       //   this.featureBinSize * (i + 1),
       // );
 
-      // console.log(this.getRectifiedSpectralFlux(this.currentFeatureBin, this.prevFeatureBin));
       outputBins.push(this.getRectifiedSpectralFlux(this.currentFeatureBin, this.prevFeatureBin));
     }
     return outputBins;
   }
 
+  /**
+   * Example code to return the average frequency in a frame using fData (frequency domain)
+   *
+   * @returns {number}
+   */
   getAverageFrequency() {
     let value = 0;
     const data = this.getFrequencyData();
@@ -172,6 +217,11 @@ export class AudioAnalyser {
     return value / data.length;
   }
 
+  /**
+   * Example code to return the average amplitude in a frame using tData (time domain)
+   *
+   * @returns {number}
+   */
   getAverageAmplitude() {
     let value = 0;
     const data = this.getTimeDomainData();
@@ -182,6 +232,11 @@ export class AudioAnalyser {
     return value / data.length;
   }
 
+  /**
+   * Function to return debug info about this component
+   *
+   * @returns {string}
+   */
   logSpectralFluxSamples() {
     let __ = (str) => parseFloat(str).toFixed(3);
     let indexDisplayed = this.indexToProcess - 2;
@@ -190,16 +245,11 @@ export class AudioAnalyser {
       <tr><th colspan="2">SpectralFluxSamples</th></tr>
       <tr><th><strong>index</strong></th><td>${indexDisplayed}</td></tr>
       <tr><th>Time (s)</th><td>${__(this.spectralFluxSamples[indexDisplayed].time)}</td></tr>
-      <tr><th>PPM Estimation Window</th><td>${__(this.spectralFluxSamples[indexDisplayed].ppmEstimationWindow)}</td></tr>
       <tr><th>PPM Estimate</th><td>${__(this.spectralFluxSamples[indexDisplayed].ppmEstimate)}</td></tr>
-      <tr><th>isPeak</th><td>${this.spectralFluxSamples[indexDisplayed - 5].isPeak}</td></tr>
-      <tr><th>isPeak</th><td>${this.spectralFluxSamples[indexDisplayed - 4].isPeak}</td></tr>
-      <tr><th>isPeak</th><td>${this.spectralFluxSamples[indexDisplayed - 3].isPeak}</td></tr>
-      <tr><th>isPeak</th><td>${this.spectralFluxSamples[indexDisplayed].isPeak}</td></tr>
+      <tr><th>isPeak</th><td>${this.spectralFluxSamples.slice(indexDisplayed - 5, indexDisplayed).some(x => x.isPeak)}</td></tr>
       <tr><th>prunedSpectralFlux</th><td>${__(this.spectralFluxSamples[indexDisplayed].prunedSpectralFlux)}</td></tr>
       <tr><th>spectralFlux</th><td>${this.spectralFluxSamples[indexDisplayed].spectralFlux}</td></tr>
       <tr><th>threshold</th><td>${__(this.spectralFluxSamples[indexDisplayed].threshold)}</td></tr>
-      <tr><th>sampleLength</th><td>${this.spectralFluxSamples.length}</td></tr>
       <tr>
         <th>Spectral Bin 1</th>
         <td>${this.spectralFluxSamples[indexDisplayed].spectralBinData[0]}</td>
