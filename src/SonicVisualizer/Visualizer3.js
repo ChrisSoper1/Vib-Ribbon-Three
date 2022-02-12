@@ -1,6 +1,9 @@
 /**
  * note: this does not work in firefox due to a lack of support of OfflineAudioContext.suspend()
  *  and OfflineAudioContext.resume(), which are required for pre-processing audio using the WebAudio API
+ *
+ *  TODO: https://github.com/chrisguttandin/standardized-audio-context appears to fix the above issue, may be worth
+ *   considering
  */
 import {
   AmbientLight,
@@ -82,7 +85,7 @@ export class SonicVisualizer3 {
         console.log("Done!");
 
         let output = this.audioContextOffline.startRendering().then(() => {
-          console.log('samples', this.analyser.spectralFluxSamples.filter(x => x.isPeak).map(x => ({
+          console.log('Peaks', this.analyser.spectralFluxSamples.filter(x => x.isPeak).map(x => ({
             time: x.time,
             bins: x.spectralBinData,
           })));

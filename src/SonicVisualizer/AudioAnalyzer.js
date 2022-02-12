@@ -7,6 +7,7 @@ export class AudioAnalyser {
     this.analyser.fftSize = fftSize;
     this.tData = new Uint8Array(this.analyser.fftSize);
     this.fData = new Uint8Array(this.analyser.frequencyBinCount);
+    this.fDataFloat = new Float32Array(this.analyser.frequencyBinCount);
     this.fDataPrevious = new Uint8Array(this.analyser.frequencyBinCount);
 
     this.spectralFluxSamples = [];
@@ -21,7 +22,7 @@ export class AudioAnalyser {
     this.featureBinSize = Math.floor(this.fData.length / 4);
     this.prevFeatureBin = new Uint8Array(this.featureBinSize);
     this.currentFeatureBin = new Uint8Array(this.featureBinSize);
-    sharedDebugPanel.addLoggerCallback(() => this.logSpectralFluxSamples());
+    // sharedDebugPanel.addLoggerCallback(() => this.logSpectralFluxSamples());
     sharedDebugPanel.enable();
   }
 
@@ -32,6 +33,7 @@ export class AudioAnalyser {
    */
   getFrequencyData() {
     this.analyser.getByteFrequencyData(this.fData);
+    this.analyser.getFloatFrequencyData(this.fDataFloat);
     this.fData.copyWithin(this.fDataPrevious, 0);
     return this.fData;
   }

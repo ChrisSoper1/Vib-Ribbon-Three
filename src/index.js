@@ -8,7 +8,8 @@
 // import {SonicVisualizer} from './SonicVisualizer';
 // const app = new SonicVisualizer();
 
-import {SonicVisualizer} from './SonicVisualizer/Visualizer2';
-const app = new SonicVisualizer();
-
-app.start();
+// const app = new SonicVisualizer2();
+// const app = new SonicVisualizer3(audioFile);
+// const app = new SonicVisualizer4(audioFile);
+const app = new SonicVisualizer5();
+app.start(audioFile);

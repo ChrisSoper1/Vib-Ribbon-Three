@@ -143,7 +143,7 @@ export class SonicVisualizer5 {
 
   updateColors() {
     // move rows back
-    for (let i = 1; i < this.colorAttrGrid.length; i++) {
+    for (let i = 2; i < 0; i--) {
       // update the colors
       for (let j = 0; j < this.colorAttrGrid[i].length; j++) {
         let destinationAttr = this.colorAttrGrid[i][j];
