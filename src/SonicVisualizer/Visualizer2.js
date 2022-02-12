@@ -31,9 +31,10 @@ import {AudioAnalyser} from './AudioAnalyzer';
 import {sharedDebugPanel} from "../utils/debug_panel";
 
 const fftSize = 1024;
+// const audioFile = './Sam_and_Dave-Hold_on_Im_coming.mp3';
 const audioFile = './A History of Bad Men.mp3';
 
-export class SonicVisualizer {
+export class SonicVisualizer2 {
   constructor() {
     this.renderer = new WebGLRenderer({antialias: true});
     this.renderer.setClearColor(0x000000);
@@ -59,15 +60,16 @@ export class SonicVisualizer {
     this.positionAttribute = new BufferAttribute(this.positionArray, 3);
     this.geometry.setAttribute('position', this.positionAttribute);
     this.mesh = new Points(this.geometry, new PointsMaterial({"color": 0xFFFFFF, size: 5}));
-    this.mesh.scale.set(4,1,1)
+    this.mesh.scale.set(4, 1, 1);
     this.scene.add(this.mesh);
 
     this.geometryT = new BufferGeometry();
     this.positionArrayT = new Uint8Array(fftSize);
     this.positionAttributeT = new BufferAttribute(this.positionArrayT, 3);
-    this.geometry.setAttribute('position', this.positionAttributeT);
+    this.geometryT.setAttribute('position', this.positionAttributeT);
     this.meshT = new Line(this.geometryT, new LineBasicMaterial({"color": 0xFFFF00}));
-    this.meshT.scale.set(4,1,1)
+    // this.meshT = new Points(this.geometryT, new PointsMaterial({"color": 0xFFFF00}));
+    this.meshT.scale.set(4, 1, 1);
     this.scene.add(this.meshT);
 
     window.addEventListener('resize', () => this.renderer.setSize(window.innerWidth, window.innerHeight));
