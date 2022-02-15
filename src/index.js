@@ -12,9 +12,9 @@ const audioFile = './Sam_and_Dave-Hold_on_Im_coming.mp3';
 // const app = new SonicVisualizer2();
 // import {SonicVisualizer3} from './SonicVisualizer/Visualizer3';
 // const app = new SonicVisualizer3(audioFile);
-import {SonicVisualizer4} from './SonicVisualizer/Visualizer4';
-const app = new SonicVisualizer4();
+// import {SonicVisualizer4} from './SonicVisualizer/Visualizer4';
+// const app = new SonicVisualizer4();
 
-// import {SonicVisualizer5} from './SonicVisualizer/Visualizer5';
-// const app = new SonicVisualizer5();
+import {SonicVisualizer5} from './SonicVisualizer/Visualizer5';
+const app = new SonicVisualizer5();
 app.start(audioFile);
