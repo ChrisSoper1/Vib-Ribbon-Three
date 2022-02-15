@@ -6,20 +6,18 @@
  */
 import {
   AmbientLight,
-  AxesHelper, BufferAttribute,
+  BufferAttribute,
   BufferGeometry,
-  Color as threeColor,
   DoubleSide,
   Float32BufferAttribute,
   LineBasicMaterial,
   LineSegments,
   Mesh,
   MeshBasicMaterial,
-  MeshLambertMaterial,
   Scene,
   StaticReadUsage,
-  StreamCopyUsage,
   StreamDrawUsage,
+  Vector3,
   WireframeGeometry,
 } from "three/src/Three";
 
@@ -43,26 +41,31 @@ export class SonicVisualizer5 {
     this.stats = new Stats();
     document.body.appendChild(this.stats.dom);
     this.renderer = getDefaultRenderer();
-    // this.camera = getDefaultCamera();
     this.camera = getPerspectiveCamera();
-    this.camera.position.z = 128;
-    this.camera.updateProjectionMatrix();
 
-    this.camera.lookAt(this.gridSize, this.gridSize, 0);
     this.scene = new Scene();
-    const axesHelper = new AxesHelper(5);
-    this.scene.add(axesHelper);
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.camera.position.set(64, 64, 64);
+    this.controls.target.set(64, 64, 0); // camera direction
+    this.controls.update();
 
     this.colorMap = new scaleSequential(interpolateTurbo).domain([-1, 256]);
 
     this.audioContext = new AudioContext();
     this.analyser = null;
 
-    this.colorAttr = null; // Set below
-    this.geometry = null; // Set below
-    this.generateGrid(this.gridSize);
+    this._material = new MeshBasicMaterial({
+      side: DoubleSide,
+      vertexColors: true,
+    });
+    this._positionAttr = new Float32BufferAttribute(new Float32Array(this.gridSize * this.gridSize * 3), 3);
+    this._positionAttr.setUsage(StaticReadUsage);
+    this.colorAttr = new BufferAttribute(new Uint8Array(this.gridSize * this.gridSize * 3), 3, true);
+    this.colorAttr.setUsage(StreamDrawUsage);
+
+    this.mesh = this.generateGrid();
+    this.scene.add(this.mesh);
 
     document.body.appendChild(this.renderer.domElement);
     window.addEventListener('resize', () => this.renderer.setSize(window.innerWidth, window.innerHeight));
@@ -77,29 +80,15 @@ export class SonicVisualizer5 {
       .then(() => this.animate());
   }
 
-  generateGrid(gridSize) {
-    let _material = new MeshBasicMaterial({
-      // let _material = new MeshLambertMaterial({
-      side: DoubleSide,
-      vertexColors: true,
-    });
+  generateGrid() {
+    let _positionAttr = this._positionAttr;
+    let colorAttr = this.colorAttr;
+    let gridSize = this.gridSize;
+    let _material = this._material;
 
-    let _positionAttr = new Float32BufferAttribute(new Float32Array(gridSize * gridSize * 3), 3);
-    _positionAttr.setUsage(StaticReadUsage);
-
-    let colorAttr = new BufferAttribute(new Uint8Array(gridSize * gridSize * 3), 3, true);
-    colorAttr.setUsage(StreamDrawUsage);
-
-    let rowStartIx;
     for (let i = 0; i <= gridSize; i++) {
-      rowStartIx = gridSize * i;
       for (let j = 0; j <= gridSize; j++) {
-        _positionAttr.setXYZ(
-          rowStartIx + j,
-          j * 2.0,
-          i * 2.0,
-          0,
-        );
+        _positionAttr.setXYZ((gridSize * i) + j, j * 2.0, i * 2.0, 0);
       }
     }
     _positionAttr.needsUpdate = true;
@@ -111,9 +100,8 @@ export class SonicVisualizer5 {
      * The indexes of vertexes in the window use the following variables
      * | b | a |
      * | c | d |
-     * Triangle 1 is vertexes (b,a,d)
-     * Triangle 2 is vertexes (b,d,c)
-     * change switch the second and third vertex in both triangles to face the other direction
+     * Triangle 1 has vertexes (b,a,d) and Triangle 2 has vertexes (b,d,c)
+     * Switch the second and third vertex in both triangles to face the other direction
      */
     let indices = [];
     for (let i = 0; i < gridSize - 1; i++) {
@@ -131,27 +119,9 @@ export class SonicVisualizer5 {
     geometry.setIndex(indices);
     geometry.setAttribute('position', _positionAttr);
     geometry.setAttribute('color', colorAttr);
-
     geometry.computeVertexNormals();
-    geometry.computeBoundingBox();
-    geometry.computeBoundingSphere();
 
-    const wireframe = new WireframeGeometry(geometry);
-    const line = new LineSegments(
-      wireframe,
-      new LineBasicMaterial({
-        depthTest: false,
-        opacity: 0.25,
-        transparent: true,
-      }),
-    );
-    this.scene.add(line);
-
-    let mesh = new Mesh(geometry, _material);
-    this.scene.add(mesh);
-
-    this.geometry = geometry;
-    this.colorAttr = colorAttr;
+    return new Mesh(geometry, _material);
   }
 
   animate() {
@@ -190,19 +160,12 @@ export class SonicVisualizer5 {
     );
 
     // update the first row
-    console.log({
-      'min': Math.min(...data),
-      'max': Math.max(...data),
-    });
     for (let i = 0; i < gridSize; i++) {
       if (data.length) {
         let targetColor = d3color(colorMap(data[i]));
         colorAttr.setXYZ(i, targetColor.r, targetColor.g, targetColor.b);
       }
     }
-    let debug_v = [];
-    colorAttr.copyColorsArray(debug_v);
-    console.log(debug_v);
     colorAttr.needsUpdate = true;
   }
 }
