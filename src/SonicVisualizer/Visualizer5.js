@@ -5,39 +5,27 @@
  * a tapered cylinder changes over time
  */
 import {
-  AxesHelper,
   AmbientLight,
-  BoxGeometry,
-  MeshBasicMaterial,
-  BufferAttribute,
-  PlaneGeometry,
-  Mesh,
-  WireframeGeometry,
-  DoubleSide,
-  LineSegments,
-  ConeGeometry,
-  Group,
-  OrthographicCamera,
-  ShaderMaterial,
-  Scene,
-  Points,
+  AxesHelper,
   BufferGeometry,
-  PointsMaterial,
-  MeshPhongMaterial,
+  Float32BufferAttribute,
+  LineBasicMaterial,
+  LineSegments,
+  Mesh,
   MeshLambertMaterial,
+  Scene,
   StaticReadUsage,
-  StreamDrawUsage, LineBasicMaterial, Float32BufferAttribute,
+  StreamCopyUsage,
+  StreamDrawUsage,
+  WireframeGeometry,
 } from "three/src/Three";
 
 import {Lut} from "three/examples/jsm/math/Lut";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import {VertexNormalsHelper} from 'three/examples/jsm/helpers/VertexNormalsHelper.js';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 
-import {AudioAnalyser} from './AudioAnalyzer';
-
 import {sharedDebugPanel} from "../utils/debug_panel";
-import {getDefaultCamera, getDefaultRenderer, getPerspectiveCamera, loadAudio} from "../utils/helpers";
+import {getDefaultRenderer, getPerspectiveCamera, loadAudio} from "../utils/helpers";
 
 const UINT8_MAXVALUE = 255;
 
@@ -68,7 +56,7 @@ export class SonicVisualizer5 {
     this.analyser = null;
 
     this.colorAttr = null; // Set below
-    this.geometry = null;
+    this.geometry = null; // Set below
     this.generateGrid(this.gridSize);
 
     document.body.appendChild(this.renderer.domElement);
@@ -112,21 +100,21 @@ export class SonicVisualizer5 {
     }
     _positionAttr.needsUpdate = true;
 
-    // This is stupid.  See https://github.com/mrdoob/three.js/blob/master/examples/webgl_buffergeometry_indexed.html
+    /*
+     * Based entirely on https://github.com/mrdoob/three.js/blob/master/examples/webgl_buffergeometry_indexed.html
+     * This defines what vertexes connect to each other to make a
+     * triangle pattern which defines a mesh surface.
+     *
+     * The indexes of vertexes in the window use the following variables
+     * | b | a |
+     * | c | d |
+     * Triangle 1 is vertexes (b,a,d)
+     * Triangle 2 is vertexes (b,d,c)
+     * change switch the second and third vertex in both triangles to face the other direction
+     */
     let indices = [];
     for (let i = 0; i < gridSize - 1; i++) {
       for (let j = 0; j < gridSize - 1; j++) {
-        /*
-         * This defines what vertexes connect to each other to make a
-         * triangle pattern which defines a mesh surface.
-         *
-         * The indexes of vertexes in the window use the following variables
-         * | b | a |
-         * | d | c |
-         * Triangle 1 is vertexes (b,a,d)
-         * Triangle 2 is vertexes (b,d,c)
-         * change switch the second and third vertex in both triangles to face the other direction
-         */
         const a = i * gridSize + (j + 1);
         const b = i * gridSize + j;
         const c = (i + 1) * gridSize + j;
@@ -140,27 +128,24 @@ export class SonicVisualizer5 {
     geometry.setIndex(indices);
     geometry.setAttribute('position', _positionAttr);
     geometry.setAttribute('color', colorAttr);
-    // geometry.lookAt(this.camera.position); // TODO! Uses this.camera
 
     geometry.computeVertexNormals();
     geometry.computeBoundingBox();
     geometry.computeBoundingSphere();
 
-    // const wireframe = new WireframeGeometry(geometry);
-    // const line = new LineSegments(
-    //   wireframe,
-    //   new LineBasicMaterial({
-    //     depthTest: false,
-    //     opacity: 0.25,
-    //     transparent: true,
-    //   }),
-    // );
-    // this.scene.add(line);
+    const wireframe = new WireframeGeometry(geometry);
+    const line = new LineSegments(
+      wireframe,
+      new LineBasicMaterial({
+        depthTest: false,
+        opacity: 0.25,
+        transparent: true,
+      }),
+    );
+    this.scene.add(line);
 
     let mesh = new Mesh(geometry, _material);
     this.scene.add(mesh);
-    const helper = new VertexNormalsHelper(mesh, 5, 0xFFFFFF, 1);
-    this.scene.add(helper);
 
     this.geometry = geometry;
     this.colorAttr = colorAttr;
@@ -185,44 +170,26 @@ export class SonicVisualizer5 {
     this.analyser.updateSpectralFluxSamples();
 
     sharedDebugPanel.update();
-    //console.log(this.analyser.getAverageAmplitude());
     this.renderer.render(this.scene, this.camera);
   }
 
   updateColors() {
-    let colorAttr = this.colorAttr; // in case I want to refactor this method to be shared
+    let colorAttr = this.colorAttr;
 
-    // TODO: this could could be improved by refactoring it as a transform.
-    //  additionally it can be implemented in the shader
+    // move rows back by shifting them this.gridSize elements later and clipping the overflow
+    colorAttr.array.set(
+      colorAttr.array.slice(0, colorAttr.array.length - (this.gridSize * 3)),
+      this.gridSize * 3,
+    );
 
-    // move rows back
-    /*
-     for (let i = 0; i < this.gridSize - 1; i++) {
-     // Start with the first item of the last row
-     let targetIx = (this.gridSize * this.gridSize - 1) - (this.gridSize * (i - 1));
-     let sourceIx = targetIx - this.gridSize;
-     for (let j = 0; j < this.gridSize; j++) {
-     colorAttr.setXYZ(
-     targetIx + j,
-     colorAttr.getX(sourceIx + j),
-     colorAttr.getY(sourceIx + j),
-     colorAttr.getZ(sourceIx + j),
-     );
-     }
-     }
-     */
-
-    // update all rows
+    // update the first row
     let data = this.analyser.getFrequencyData();
-    for (let j = 0; j < this.gridSize; j++) {
-      for (let i = 0; i < this.gridSize; i++) {
-        if (data.length) {
-          let targetColor = this.colorMap.getColor(data[i]);
-          colorAttr.setXYZ(j * this.gridSize + i, targetColor.r, targetColor.g, targetColor.b);
-        }
+    for (let i = 0; i < this.gridSize; i++) {
+      if (data.length) {
+        let targetColor = this.colorMap.getColor(data[i]);
+        colorAttr.setXYZ(i, targetColor.r, targetColor.g, targetColor.b);
       }
     }
-
     colorAttr.needsUpdate = true;
   }
 }
