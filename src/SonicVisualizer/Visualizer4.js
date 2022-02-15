@@ -3,106 +3,116 @@
  */
 import {
   AmbientLight,
-  AnimationMixer,
-  Audio as ThreeAudio,
-  AudioLoader,
-  AudioListener,
-  LuminanceFormat,
-  RedFormat,
-  DataTexture,
   BufferAttribute,
-  ShaderMaterial,
-  PlaneGeometry,
-  Mesh,
-  Clock,
-  OrthographicCamera,
-  Scene,
-  Points,
   BufferGeometry,
-  PointsMaterial,
-  Line,
+  DoubleSide,
+  Group,
   LineBasicMaterial,
+  LineSegments,
+  Line,
+  Scene,
+  StaticReadUsage,
+  StreamDrawUsage,
   Vector3,
-  WebGLRenderer,
+  WireframeGeometry,
+  PerspectiveCamera,
+  BoxHelper,
+  CameraHelper,
 } from "three/src/Three";
 
-import {AudioAnalyser} from './AudioAnalyzer';
+import {color as d3color} from "d3-color";
+import {scaleSequential} from "d3-scale";
+import {interpolateTurbo} from "d3-scale-chromatic";
+import Stats from 'three/examples/jsm/libs/stats.module.js';
+import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 
 import {sharedDebugPanel} from "../utils/debug_panel";
-import {getDefaultCamera, getDefaultRenderer} from "../utils/helpers";
+import {getDefaultCamera, getDefaultRenderer, getPerspectiveCamera, loadAudio} from "../utils/helpers";
 
-const fftSize = 1024;
+const UINT8_MAXVALUE = 255;
 
 export class SonicVisualizer4 {
 
-  constructor(audioFile) {
-    this.audioFile = audioFile;
+  constructor(fftSize = 128) {
+    this.fftSize = 128;
+    this.timeSteps = 500;
+
     this.renderer = getDefaultRenderer();
+
+    // this.camera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.001, 1000);
     this.camera = getDefaultCamera();
+
     this.scene = new Scene();
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
+    this.camera.position.set(this.fftSize / 2, 100, 10);
+    this.controls.target.set(this.fftSize / 2, 100, 0); // camera direction
+    this.controls.update();
+
+    this.audioContext = new AudioContext();
+    this.analyser = null;
+
+    this.positionAttrArray = [];
+    this.colorAttrArray = [];
+    this.geometryArray = [];
+    this.object = new Group();
+
+    let colorMap = new scaleSequential(interpolateTurbo).domain([0, this.timeSteps]);
+    let _material = new LineBasicMaterial({side: DoubleSide, vertexColors: true});
+    for (let i = 0; i < this.timeSteps; i++) {
+      let posAttr = new BufferAttribute(new Float32Array(this.fftSize * 3), 3);
+      posAttr.setUsage(StreamDrawUsage);
+      this.positionAttrArray.push(posAttr);
+
+      let colAttr = new BufferAttribute(new Uint8Array(this.fftSize * 3), 3, true);
+      colAttr.setUsage(StaticReadUsage);
+
+      let targetColor = d3color(colorMap(i));
+      for (let i = 0; i < colAttr.count; i++) {
+        colAttr.setXYZ(i, targetColor.r, targetColor.g, targetColor.b);
+      }
+      colAttr.needsUpdate = true;
+      this.colorAttrArray.push(colAttr);
+
+      let geometry = new BufferGeometry();
+      geometry.setAttribute('position', posAttr);
+      geometry.setAttribute('color', colAttr);
+      geometry.lookAt(this.camera.position);
+      this.geometryArray.push(geometry);
+
+      let mesh = new Line(geometry, _material);
+      // mesh.position.set(0, -10, i * -1);
+      mesh.position.set(0, 0, i * -1);
+      this.object.add(mesh);
+    }
+
+    this.scene.add(this.object);
+    this.camera.lookAt(this.object.position)
+    // helpers
+
+    this.stats = new Stats();
+    document.body.appendChild(this.stats.dom);
     document.body.appendChild(this.renderer.domElement);
-
-
-    this.audioLoaded = this.loadAudio();
-
-
-    this.geometry = new BufferGeometry();
-    this.positionArray = new Uint8Array(fftSize / 2);
-    this.positionAttribute = new BufferAttribute(this.positionArray, 3);
-    this.geometry.setAttribute('position', this.positionAttribute);
-    this.mesh = new Points(this.geometry, new PointsMaterial({"color": 0xFFFFFF, size: 5}));
-    this.mesh.scale.set(4, 1, 1);
-    this.scene.add(this.mesh);
-
-    this.geometryT = new BufferGeometry();
-    this.positionArrayT = new Uint8Array(fftSize);
-    this.positionAttributeT = new BufferAttribute(this.positionArrayT, 3);
-    this.geometryT.setAttribute('position', this.positionAttributeT);
-    this.meshT = new Line(this.geometryT, new LineBasicMaterial({"color": 0xFFFF00}));
-    // this.meshT = new Points(this.geometryT, new PointsMaterial({"color": 0xFFFF00}));
-    this.meshT.scale.set(4, 1, 1);
-    this.scene.add(this.meshT);
-
     window.addEventListener('resize', () => this.renderer.setSize(window.innerWidth, window.innerHeight));
   }
 
-  start() {
-    this.audioLoaded.then(() => this.animate());
-  }
-
-  loadAudio() {
-    this.listener = new AudioListener();
-    this.audio = new ThreeAudio(this.listener);
-    this.audioContext = new AudioContext();
-
-    this.audioFile = audioFile;
-    this.loader = new AudioLoader();
-    this.analyser = new AudioAnalyser(this.audioContext, fftSize);
-
-    let result = new Promise(resolve => this.loader.load(this.audioFile, resolve))
-      .then(buffer => {
-        let source = this.audioContext.createBufferSource();
-        source.buffer = buffer;
-        source.connect(this.audioContext.destination);
-        source.connect(this.analyser.analyser);
+  start(audioFile, fftSize = this.fftSize) {
+    loadAudio(audioFile, this.audioContext, fftSize)
+      .then(({source, _, analyzer}) => {
+        this.analyser = analyzer;
         source.start(0);
-      });
-
-    return result;
+      })
+      .then(() => this.animate());
   }
 
   animate() {
     try {
-      this.analyser.getTimeDomainData();
-      this.analyser.getFrequencyData();
-      this.analyser.updateSpectralFluxSamples();
-      this.drawPoints();
-      this.drawPointsT();
+      this.update(this.analyser.getTimeDomainData());
+      this.controls.update();
       sharedDebugPanel.update();
-      //console.log(this.analyser.getAverageAmplitude());
       this.renderer.render(this.scene, this.camera);
+      this.stats.update();
       requestAnimationFrame(() => this.animate());
     } catch (error) {
       console.log(error);
@@ -110,37 +120,23 @@ export class SonicVisualizer4 {
     }
   }
 
-  drawPoints() {
-    this.positionArray = [];
-    for (let i = 0; i < this.analyser.fData.length; i++) {
-      this.positionArray.push(i);  // X
-      this.positionArray.push(this.analyser.fData[i]);  // Y
-      this.positionArray.push(0); // Z
-    }
-    let positionAttr = new BufferAttribute(new Uint8Array(this.positionArray), 3);
-    this.geometry.setAttribute(
-      'position',
-      positionAttr,
-    );
-    this.geometry.computeBoundingSphere();
-    this.geometry.computeBoundingBox();
-    this.geometry.computeVertexNormals();
-  }
+  update(data) {
+    // reverse is a mutating method, slice() creates a copy
+    let posAttrArrayReverse = this.positionAttrArray.slice().reverse();
+    let geomArrayReverse = this.geometryArray.slice().reverse();
 
-  drawPointsT() {
-    this.positionArrayT = [];
-    for (let i = 0; i < this.analyser.tData.length; i++) {
-      this.positionArrayT.push(i);  // X
-      this.positionArrayT.push(this.analyser.tData[i]);  // Y
-      this.positionArrayT.push(0); // Z
+    // move rows back
+    for (let i = 0; i < posAttrArrayReverse.length - 1; i++) {
+      posAttrArrayReverse[i].copy(posAttrArrayReverse[i + 1]);
+      posAttrArrayReverse[i].needsUpdate = true;
+      geomArrayReverse[i].computeBoundingBox();
+      geomArrayReverse[i].computeBoundingSphere();
     }
-    let positionAttr = new BufferAttribute(new Uint8Array(this.positionArrayT), 3);
-    this.geometryT.setAttribute(
-      'position',
-      positionAttr,
-    );
-    this.geometryT.computeBoundingSphere();
-    this.geometryT.computeBoundingBox();
-    this.geometryT.computeVertexNormals();
+    // update the first row
+    let firstRowPos = this.positionAttrArray[0];
+    for (let i = 0; i < data.length; i++) {
+      firstRowPos.setXYZ(i, i, data[i], 0);
+      firstRowPos.needsUpdate = true;
+    }
   }
 }
