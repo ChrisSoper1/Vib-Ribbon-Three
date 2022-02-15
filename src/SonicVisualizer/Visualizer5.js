@@ -6,12 +6,15 @@
  */
 import {
   AmbientLight,
-  AxesHelper,
+  AxesHelper, BufferAttribute,
   BufferGeometry,
+  Color as threeColor,
+  DoubleSide,
   Float32BufferAttribute,
   LineBasicMaterial,
   LineSegments,
   Mesh,
+  MeshBasicMaterial,
   MeshLambertMaterial,
   Scene,
   StaticReadUsage,
@@ -20,7 +23,9 @@ import {
   WireframeGeometry,
 } from "three/src/Three";
 
-import {Lut} from "three/examples/jsm/math/Lut";
+import {color as d3color} from "d3-color";
+import {scaleSequential} from "d3-scale";
+import {interpolateTurbo} from "d3-scale-chromatic";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 
@@ -50,7 +55,7 @@ export class SonicVisualizer5 {
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
-    this.colorMap = new Lut('rainbow', UINT8_MAXVALUE);
+    this.colorMap = new scaleSequential(interpolateTurbo).domain([-1, 256]);
 
     this.audioContext = new AudioContext();
     this.analyser = null;
@@ -73,17 +78,16 @@ export class SonicVisualizer5 {
   }
 
   generateGrid(gridSize) {
-    // let _material = new MeshBasicMaterial({
-    let _material = new MeshLambertMaterial({
-      // side: DoubleSide,
-      color: 0xffffff,
+    let _material = new MeshBasicMaterial({
+      // let _material = new MeshLambertMaterial({
+      side: DoubleSide,
       vertexColors: true,
     });
 
     let _positionAttr = new Float32BufferAttribute(new Float32Array(gridSize * gridSize * 3), 3);
     _positionAttr.setUsage(StaticReadUsage);
 
-    let colorAttr = new Float32BufferAttribute(new Float32Array(gridSize * gridSize * 3), 3);
+    let colorAttr = new BufferAttribute(new Uint8Array(gridSize * gridSize * 3), 3, true);
     colorAttr.setUsage(StreamDrawUsage);
 
     let rowStartIx;
@@ -101,9 +105,8 @@ export class SonicVisualizer5 {
     _positionAttr.needsUpdate = true;
 
     /*
-     * Based entirely on https://github.com/mrdoob/three.js/blob/master/examples/webgl_buffergeometry_indexed.html
-     * This defines what vertexes connect to each other to make a
-     * triangle pattern which defines a mesh surface.
+     * Based on https://github.com/mrdoob/three.js/blob/master/examples/webgl_buffergeometry_indexed.html
+     * This defines what vertexes connect to each other (as triangles) to define a face for the geometry
      *
      * The indexes of vertexes in the window use the following variables
      * | b | a |
@@ -175,21 +178,31 @@ export class SonicVisualizer5 {
 
   updateColors() {
     let colorAttr = this.colorAttr;
+    let gridSize = this.gridSize;
+    let colorMap = this.colorMap;
+    this.analyser.getFrequencyData();
+    let data = this.analyser.fData;
 
     // move rows back by shifting them this.gridSize elements later and clipping the overflow
     colorAttr.array.set(
-      colorAttr.array.slice(0, colorAttr.array.length - (this.gridSize * 3)),
-      this.gridSize * 3,
+      colorAttr.array.slice(0, colorAttr.array.length - (gridSize * 3)),
+      gridSize * 3,
     );
 
     // update the first row
-    let data = this.analyser.getFrequencyData();
-    for (let i = 0; i < this.gridSize; i++) {
+    console.log({
+      'min': Math.min(...data),
+      'max': Math.max(...data),
+    });
+    for (let i = 0; i < gridSize; i++) {
       if (data.length) {
-        let targetColor = this.colorMap.getColor(data[i]);
+        let targetColor = d3color(colorMap(data[i]));
         colorAttr.setXYZ(i, targetColor.r, targetColor.g, targetColor.b);
       }
     }
+    let debug_v = [];
+    colorAttr.copyColorsArray(debug_v);
+    console.log(debug_v);
     colorAttr.needsUpdate = true;
   }
 }
