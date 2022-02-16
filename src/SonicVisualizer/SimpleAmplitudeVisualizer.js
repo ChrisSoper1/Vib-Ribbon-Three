@@ -22,32 +22,45 @@ import {
 
 import {color as d3color} from "d3-color";
 import {scaleSequential} from "d3-scale";
-import {interpolateTurbo} from "d3-scale-chromatic";
+import {interpolateTurbo, interpolateYlOrBr} from "d3-scale-chromatic";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 
 import {sharedDebugPanel} from "../utils/debug_panel";
 import {getDefaultCamera, getDefaultRenderer, getPerspectiveCamera, loadAudio} from "../utils/helpers";
 import {scaleLinear} from "d3";
+import {VisualizerBase} from "./VisualizerBase";
 
-export class SimpleAmplitudeVisualizer {
+const DEFAULT_PARAMS = {
+  fftSize: 128,
+  timeSteps: 128,
+  material: new LineBasicMaterial({side: DoubleSide, vertexColors: true}),
+  colorMap: new scaleSequential(interpolateYlOrBr),
+};
 
-  fftSize = 128;
-  timeSteps = 128;
-  material = new LineBasicMaterial({side: DoubleSide, vertexColors: true});
+export class SimpleAmplitudeVisualizer extends VisualizerBase {
 
   /**
    * @param params.fftSize
    * @param params.timeSteps
+   * @param params.material
    * @param params.colorMap
    */
   constructor(params) {
-    this.fftSize = params.fftSize || this.fftSize;
-    this.timeSteps = params.timeSteps || this.timeSteps;
-    this.colorMap = params.colorMap || new scaleSequential(interpolateTurbo).domain([0, this.timeSteps]);
+    params = {...DEFAULT_PARAMS, ...params};
+    super(params);
+    this.fftSize = params.fftSize;
+    this.timeSteps = params.timeSteps;
+    this.material = params.material;
+    this.colorMap = params.colorMap.domain([0, this.timeSteps]);
+
     this.scaleAmpToWidth = scaleLinear()
-      .domain([0,255])
-      .range([0,this.fftSize]);
+      .domain([0, 255])
+      .range([0, this.timeSteps]);
+
+    this.scaleZ = scaleLinear()
+      .domain([0, 255])
+      .range([0, this.timeSteps]);
 
     this.positionAttrArray = [];
     this.geometryArray = [];
@@ -70,7 +83,7 @@ export class SimpleAmplitudeVisualizer {
       this.geometryArray.push(geometry);
 
       const line = new Line(geometry, this.material);
-      line.position.set(0, 0, i * -1);
+      line.position.set(0, 0, Math.floor(this.timeSteps / 2) - i);
       this.mesh.add(line);
     }
     this.boundingBox = new Box3(
@@ -90,6 +103,7 @@ export class SimpleAmplitudeVisualizer {
       posAttrArrayReverse[i].copy(posAttrArrayReverse[i + 1]);
       posAttrArrayReverse[i].needsUpdate = true;
       geomArrayReverse[i].computeBoundingBox();
+      geomArrayReverse[i].center();
     }
 
     // update the first row
@@ -99,6 +113,7 @@ export class SimpleAmplitudeVisualizer {
       firstRowPos.needsUpdate = true;
     }
     this.geometryArray[0].computeBoundingBox();
+    this.geometryArray[0].center();
     // this.boundingBox.setFromObject(this.mesh);
   }
 }

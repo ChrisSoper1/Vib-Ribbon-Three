@@ -40,6 +40,7 @@ export function loadAudio(audioFile, audioContext = new AudioContext(), fftSize 
   return new Promise(resolve => loader.load(audioFile, resolve))
     .then(buffer => {
       const source = audioContext.createBufferSource();
+      const duration = buffer.duration;
       source.buffer = buffer;
       source.connect(audioContext.destination);
       source.connect(analyser.analyser);
@@ -48,6 +49,7 @@ export function loadAudio(audioFile, audioContext = new AudioContext(), fftSize 
         'source': source,
         'context': audioContext,
         'analyzer': analyser,
+        'duration': duration,
       };
     });
 }

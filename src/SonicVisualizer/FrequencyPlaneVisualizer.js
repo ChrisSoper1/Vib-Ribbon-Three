@@ -32,8 +32,9 @@ import {interpolateTurbo} from "d3-scale-chromatic";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {getDefaultRenderer, getPerspectiveCamera, loadAudio} from "../utils/helpers";
+import {VisualizerBase} from "./VisualizerBase";
 
-export class FrequencyPlaneVisualizer {
+export class FrequencyPlaneVisualizer extends VisualizerBase {
   fftSize = 128;
 
   /**
@@ -41,6 +42,7 @@ export class FrequencyPlaneVisualizer {
    * @param params.colorMap
    */
   constructor(params) {
+    super(params)
     this.fftSize = params.fftSize || this.fftSize;
     if (!params.colorMap) {
       this.colorMap = new scaleSequential(interpolateTurbo).domain([0, 255]);
@@ -80,13 +82,13 @@ export class FrequencyPlaneVisualizer {
     this.geometry.computeVertexNormals();
     this.geometry.computeBoundingBox();
     this.geometry.computeBoundingSphere();
+    this.geometry.center();
 
     this.mesh = new Mesh(this.geometry, new MeshBasicMaterial({side: DoubleSide, vertexColors: true}));
     this.boundingBox = this.geometry.boundingBox;
   }
 
   update(data) {
-
     // move rows back by shifting them this.gridSize elements later and clipping the overflow
     this.colorAttr.array.set(
       this.colorAttr.array.slice(0, this.colorAttr.array.length - (this.gridSize * 3)),
