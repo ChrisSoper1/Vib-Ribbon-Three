@@ -33,7 +33,7 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {getDefaultRenderer, getPerspectiveCamera, loadAudio} from "../utils/helpers";
 
-export class SonicVisualizer5 {
+export class FrequencyPlaneVisualizer {
   fftSize = 128;
 
   /**

@@ -30,7 +30,7 @@ import {sharedDebugPanel} from "../utils/debug_panel";
 import {getDefaultCamera, getDefaultRenderer, getPerspectiveCamera, loadAudio} from "../utils/helpers";
 import {scaleLinear} from "d3";
 
-export class SonicVisualizer4 {
+export class SimpleAmplitudeVisualizer {
 
   fftSize = 128;
   timeSteps = 128;

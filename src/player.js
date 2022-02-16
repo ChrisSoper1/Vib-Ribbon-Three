@@ -7,8 +7,8 @@ import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {scaleSequential} from "d3-scale";
 import {interpolateTurbo} from "d3-scale-chromatic";
 import Stats from "three/examples/jsm/libs/stats.module";
-import {SonicVisualizer5} from "./SonicVisualizer/Visualizer5";
-import {SonicVisualizer4} from "./SonicVisualizer/Visualizer4";
+import {FrequencyPlaneVisualizer} from "./SonicVisualizer/FrequencyPlaneVisualizer";
+import {SimpleAmplitudeVisualizer} from "./SonicVisualizer/SimpleAmplitudeVisualizer";
 
 export class BasicPlayer {
   fftSize = 128;
@@ -38,8 +38,8 @@ export class BasicPlayer {
     this.colorMap = new scaleSequential(interpolateTurbo).domain([-1, 256]);
     this.audioContext = new AudioContext();
 
-    const amplitudeVisualizer = new SonicVisualizer4({});
-    const frequencyVisualizer = new SonicVisualizer5({});
+    const amplitudeVisualizer = new SimpleAmplitudeVisualizer({});
+    const frequencyVisualizer = new FrequencyPlaneVisualizer({});
     frequencyVisualizer.geometry.lookAt(this.scene.up);
     const bbox = new Box3().copy(amplitudeVisualizer.boundingBox);
     bbox.expandByObject(frequencyVisualizer.mesh);
