@@ -18,7 +18,7 @@ import {
   BufferAttribute,
   BufferGeometry,
   DoubleSide,
-  Float32BufferAttribute,
+  Float32BufferAttribute, LineBasicMaterial,
   Mesh,
   MeshBasicMaterial,
   Scene,
@@ -33,16 +33,21 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {getDefaultRenderer, getPerspectiveCamera, loadAudio} from "../utils/helpers";
 
-const UINT8_MAXVALUE = 255;
-
 export class SonicVisualizer5 {
-
   fftSize = 128;
 
-  constructor(fftSize, colorMap) {
-    this.fftSize = fftSize || this.fftSize;
+  /**
+   * @param params.fftSize
+   * @param params.colorMap
+   */
+  constructor(params) {
+    this.fftSize = params.fftSize || this.fftSize;
+    if (!params.colorMap) {
+      this.colorMap = new scaleSequential(interpolateTurbo).domain([0, 255]);
+    } else {
+      this.colorMap = params.colorMap;
+    }
     this.gridSize = this.fftSize / 2;
-    this.colorMap = colorMap || new scaleSequential(interpolateTurbo).domain([-1, 256]);
 
     // Create base geometry
     this.positionAttr = new Float32BufferAttribute(new Float32Array(this.gridSize * this.gridSize * 3), 3);
@@ -71,24 +76,25 @@ export class SonicVisualizer5 {
     this.geometry = new BufferGeometry();
     this.geometry.setIndex(indices)
         .setAttribute('position', this.positionAttr)
-        .setAttribute('color', this.colorAttr)
-        .computeVertexNormals();
+        .setAttribute('color', this.colorAttr);
+    this.geometry.computeVertexNormals();
+    this.geometry.computeBoundingBox();
+    this.geometry.computeBoundingSphere();
 
     this.mesh = new Mesh(this.geometry, new MeshBasicMaterial({side: DoubleSide, vertexColors: true}));
+    this.boundingBox = this.geometry.boundingBox;
   }
 
   update(data) {
-    let gridSize = this.gridSize;
-    let colorMap = this.colorMap;
 
     // move rows back by shifting them this.gridSize elements later and clipping the overflow
     this.colorAttr.array.set(
-      this.colorAttr.array.slice(0, this.colorAttr.array.length - (gridSize * 3)),
-      gridSize * 3,
+      this.colorAttr.array.slice(0, this.colorAttr.array.length - (this.gridSize * 3)),
+      this.gridSize * 3,
     );
 
     // update the first row
-    for (let i = 0; i < gridSize; i++) {
+    for (let i = 0; i < this.gridSize; i++) {
       if (data.length) {
         let targetColor = d3color(this.colorMap(data[i]));
         this.colorAttr.setXYZ(i, targetColor.r, targetColor.g, targetColor.b);

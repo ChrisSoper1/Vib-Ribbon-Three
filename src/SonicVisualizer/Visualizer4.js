@@ -17,7 +17,7 @@ import {
   WireframeGeometry,
   PerspectiveCamera,
   BoxHelper,
-  CameraHelper,
+  CameraHelper, Box3,
 } from "three/src/Three";
 
 import {color as d3color} from "d3-color";
@@ -28,96 +28,56 @@ import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 
 import {sharedDebugPanel} from "../utils/debug_panel";
 import {getDefaultCamera, getDefaultRenderer, getPerspectiveCamera, loadAudio} from "../utils/helpers";
-
-const UINT8_MAXVALUE = 255;
+import {scaleLinear} from "d3";
 
 export class SonicVisualizer4 {
 
-  constructor(fftSize = 128) {
-    this.fftSize = 128;
-    this.timeSteps = 500;
+  fftSize = 128;
+  timeSteps = 128;
+  material = new LineBasicMaterial({side: DoubleSide, vertexColors: true});
 
-    this.renderer = getDefaultRenderer();
-
-    // this.camera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.001, 1000);
-    this.camera = getDefaultCamera();
-
-    this.scene = new Scene();
-    this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-
-    this.camera.position.set(this.fftSize / 2, 100, 10);
-    this.controls.target.set(this.fftSize / 2, 100, 0); // camera direction
-    this.controls.update();
-
-    this.audioContext = new AudioContext();
-    this.analyser = null;
+  /**
+   * @param params.fftSize
+   * @param params.timeSteps
+   * @param params.colorMap
+   */
+  constructor(params) {
+    this.fftSize = params.fftSize || this.fftSize;
+    this.timeSteps = params.timeSteps || this.timeSteps;
+    this.colorMap = params.colorMap || new scaleSequential(interpolateTurbo).domain([0, this.timeSteps]);
+    this.scaleAmpToWidth = scaleLinear()
+      .domain([0,255])
+      .range([0,this.fftSize]);
 
     this.positionAttrArray = [];
-    this.colorAttrArray = [];
     this.geometryArray = [];
-    this.object = new Group();
+    this.mesh = new Group();
 
-    let colorMap = new scaleSequential(interpolateTurbo).domain([0, this.timeSteps]);
-    let _material = new LineBasicMaterial({side: DoubleSide, vertexColors: true});
     for (let i = 0; i < this.timeSteps; i++) {
-      let posAttr = new BufferAttribute(new Float32Array(this.fftSize * 3), 3);
+      const targetColor = d3color(this.colorMap(i));
+      const posAttr = new BufferAttribute(new Float32Array(this.fftSize * 3), 3);
+      const colAttr = new BufferAttribute(new Uint8Array(this.fftSize * 3), 3, true);
       posAttr.setUsage(StreamDrawUsage);
+      colAttr.setUsage(StaticReadUsage);
       this.positionAttrArray.push(posAttr);
 
-      let colAttr = new BufferAttribute(new Uint8Array(this.fftSize * 3), 3, true);
-      colAttr.setUsage(StaticReadUsage);
-
-      let targetColor = d3color(colorMap(i));
-      for (let i = 0; i < colAttr.count; i++) {
-        colAttr.setXYZ(i, targetColor.r, targetColor.g, targetColor.b);
-      }
+      for (let j = 0; j < colAttr.count; j++) colAttr.setXYZ(j, targetColor.r, targetColor.g, targetColor.b);
       colAttr.needsUpdate = true;
-      this.colorAttrArray.push(colAttr);
 
-      let geometry = new BufferGeometry();
-      geometry.setAttribute('position', posAttr);
-      geometry.setAttribute('color', colAttr);
-      geometry.lookAt(this.camera.position);
+      const geometry = new BufferGeometry();
+      geometry.setAttribute('position', posAttr)
+              .setAttribute('color', colAttr);
       this.geometryArray.push(geometry);
 
-      let mesh = new Line(geometry, _material);
-      // mesh.position.set(0, -10, i * -1);
-      mesh.position.set(0, 0, i * -1);
-      this.object.add(mesh);
+      const line = new Line(geometry, this.material);
+      line.position.set(0, 0, i * -1);
+      this.mesh.add(line);
     }
-
-    this.scene.add(this.object);
-    this.camera.lookAt(this.object.position)
-    // helpers
-
-    this.stats = new Stats();
-    document.body.appendChild(this.stats.dom);
-    document.body.appendChild(this.renderer.domElement);
-    window.addEventListener('resize', () => this.renderer.setSize(window.innerWidth, window.innerHeight));
-  }
-
-  start(audioFile, fftSize = this.fftSize) {
-    loadAudio(audioFile, this.audioContext, fftSize)
-      .then(({source, _, analyzer}) => {
-        this.analyser = analyzer;
-        source.start(0);
-      })
-      .then(() => this.animate());
-  }
-
-  animate() {
-    try {
-      this.update(this.analyser.getTimeDomainData());
-      this.controls.update();
-      sharedDebugPanel.update();
-      this.renderer.render(this.scene, this.camera);
-      this.stats.update();
-      requestAnimationFrame(() => this.animate());
-    } catch (error) {
-      console.log(error);
-      console.log("Broke");
-    }
+    this.boundingBox = new Box3(
+      new Vector3(0, 0, -this.timeSteps),
+      new Vector3(this.fftSize, this.scaleAmpToWidth(255), 0),
+    );
+    this.update(new Uint8Array(this.fftSize));
   }
 
   update(data) {
@@ -130,13 +90,15 @@ export class SonicVisualizer4 {
       posAttrArrayReverse[i].copy(posAttrArrayReverse[i + 1]);
       posAttrArrayReverse[i].needsUpdate = true;
       geomArrayReverse[i].computeBoundingBox();
-      geomArrayReverse[i].computeBoundingSphere();
     }
+
     // update the first row
     let firstRowPos = this.positionAttrArray[0];
     for (let i = 0; i < data.length; i++) {
-      firstRowPos.setXYZ(i, i, data[i], 0);
+      firstRowPos.setXYZ(i, i, this.scaleAmpToWidth(data[i]), 0);
       firstRowPos.needsUpdate = true;
     }
+    this.geometryArray[0].computeBoundingBox();
+    // this.boundingBox.setFromObject(this.mesh);
   }
 }

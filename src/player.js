@@ -1,13 +1,14 @@
 /**
  * This is a generic stage for playing music and attaching visualizers
  */
-import {getDefaultRenderer, getPerspectiveCamera, loadAudio} from "./utils/helpers";
-import {AmbientLight, Scene} from "three/src/Three";
+import {getDefaultCamera, getDefaultRenderer, getPerspectiveCamera, loadAudio} from "./utils/helpers";
+import {AmbientLight, Box3, Box3Helper, BoxHelper, OrthographicCamera, Scene, Vector3} from "three/src/Three";
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {scaleSequential} from "d3-scale";
 import {interpolateTurbo} from "d3-scale-chromatic";
 import Stats from "three/examples/jsm/libs/stats.module";
 import {SonicVisualizer5} from "./SonicVisualizer/Visualizer5";
+import {SonicVisualizer4} from "./SonicVisualizer/Visualizer4";
 
 export class BasicPlayer {
   fftSize = 128;
@@ -15,7 +16,9 @@ export class BasicPlayer {
   constructor(params) {
     // Basics
     this.renderer = getDefaultRenderer();
-    this.camera = getPerspectiveCamera();
+    // this.camera = getDefaultCamera()
+    // this.camera = getPerspectiveCamera();
+    this.camera = new OrthographicCamera(-128, 128, 128, -128, -10000, 10000);
     this.scene = new Scene();
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -35,9 +38,19 @@ export class BasicPlayer {
     this.colorMap = new scaleSequential(interpolateTurbo).domain([-1, 256]);
     this.audioContext = new AudioContext();
 
+    const amplitudeVisualizer = new SonicVisualizer4({});
+    const frequencyVisualizer = new SonicVisualizer5({});
+    frequencyVisualizer.geometry.lookAt(this.scene.up);
+    const bbox = new Box3().copy(amplitudeVisualizer.boundingBox);
+    bbox.expandByObject(frequencyVisualizer.mesh);
+    const globalCenter = new Vector3();
+    bbox.getCenter(globalCenter);
+    // this.camera.position.copy(globalCenter)
+    console.log(globalCenter);
+
     // Objects
-    this.frequencyVisualizer = new SonicVisualizer5(this.fftSize, this.colorMap);
-    this.scene.add(this.frequencyVisualizer.mesh);
+    this.objects = [amplitudeVisualizer, frequencyVisualizer];
+    this.objects.forEach(item => this.scene.add(item.mesh));
   }
 
   animate() {
@@ -66,6 +79,7 @@ export class BasicPlayer {
   update() {
     let fData = this.analyser.getFrequencyData();
     let tData = this.analyser.getTimeDomainData();
-    this.frequencyVisualizer.update(fData);
+    this.objects[0].update(tData);
+    this.objects[1].update(fData);
   }
 }

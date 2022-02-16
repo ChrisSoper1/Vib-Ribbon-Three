@@ -3,7 +3,7 @@ import {AudioAnalyser} from "../SonicVisualizer/AudioAnalyzer";
 
 export function getDefaultRenderer() {
   let renderer = new WebGLRenderer({antialias: true});
-  renderer.setClearColor(0x000000);
+  renderer.setClearColor(0x222222);
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth * 0.99, window.innerHeight * 0.95);
   return renderer;
