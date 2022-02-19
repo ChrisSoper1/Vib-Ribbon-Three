@@ -5,7 +5,8 @@
 import {VibRibbonApplication} from './day2';
 // const app = new VibRibbonApplication();
 
-const audioFile = './Sam_and_Dave-Hold_on_Im_coming.mp3';
+// const audioFile = './Sam_and_Dave-Hold_on_Im_coming.mp3';
+const audioFile = './overcooked2-overworld.mp3';
 // const audioFile = './A History of Bad Men.mp3';
 
 // import {SonicVisualizer2} from './SonicVisualizer/Visualizer2';

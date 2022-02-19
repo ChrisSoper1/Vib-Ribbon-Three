@@ -16,7 +16,6 @@ import {
   Vector3,
   WireframeGeometry,
   PerspectiveCamera,
-  BoxHelper,
   CameraHelper, Box3,
 } from "three/src/Three";
 
@@ -102,8 +101,6 @@ export class SimpleAmplitudeVisualizer extends VisualizerBase {
     for (let i = 0; i < posAttrArrayReverse.length - 1; i++) {
       posAttrArrayReverse[i].copy(posAttrArrayReverse[i + 1]);
       posAttrArrayReverse[i].needsUpdate = true;
-      geomArrayReverse[i].computeBoundingBox();
-      geomArrayReverse[i].center();
     }
 
     // update the first row
@@ -114,6 +111,6 @@ export class SimpleAmplitudeVisualizer extends VisualizerBase {
     }
     this.geometryArray[0].computeBoundingBox();
     this.geometryArray[0].center();
-    // this.boundingBox.setFromObject(this.mesh);
+    this.boundingBox.setFromObject(this.mesh);
   }
 }

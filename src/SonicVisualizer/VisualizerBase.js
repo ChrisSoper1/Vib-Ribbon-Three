@@ -45,7 +45,6 @@ export class VisualizerBase {
    */
   rotate(x, y, z, speed = 2) {
     this.animationSpeed = speed;
-    console.log({x, y, z});
     this.directionVector.set(x, y, z);
 
     // compute target rotation

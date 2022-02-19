@@ -3,12 +3,12 @@
  */
 import {getDefaultCamera, getDefaultRenderer, getPerspectiveCamera, loadAudio} from "./utils/helpers";
 import {AmbientLight, Box3, Box3Helper, BoxHelper, OrthographicCamera, Scene, Vector3} from "three/src/Three";
-import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
-import Stats from "three/examples/jsm/libs/stats.module";
 import {FrequencyPlaneVisualizer} from "./SonicVisualizer/FrequencyPlaneVisualizer";
 import {SimpleAmplitudeVisualizer} from "./SonicVisualizer/SimpleAmplitudeVisualizer";
 import {Pane} from "tweakpane";
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
+import Stats from "three/examples/jsm/libs/stats.module";
+import {TransformControls} from "three/examples/jsm/controls/TransformControls";
 
 const DEFAULT_PARAMS = {
   audioState: 'closed',
@@ -27,15 +27,15 @@ const DEFAULT_PARAMS = {
 };
 
 const ROTATE_VECTORS = [
-  new Vector3(10, 0, -10),
-  new Vector3(0, -10, 0),
-  new Vector3(-10, 0, -10),
-  new Vector3(10, 0, 0),
-  new Vector3(0, 0, 10),
-  new Vector3(-10, 0, 0),
-  new Vector3(0, 10, -10),
-  new Vector3(0, 10, 0),
-  new Vector3(0, -10, -10),
+  new Vector3(5, -5, 10), // nw (broken)
+  new Vector3(0, -5, 10), // n (bad)
+  new Vector3(-5, -5, 10), // ne (broken)
+  new Vector3(10, 0, 0),  // w (good)
+  new Vector3(0, 0, 10),  // * (good)
+  new Vector3(-10, 0, 0), // e (good)
+  new Vector3(5, 5, 10), // sw (broken)
+  new Vector3(0, 5, 10),   // s (bad)
+  new Vector3(-5, 5, 10), // se (broken)
 ];
 
 export class BasicPlayer {
@@ -50,8 +50,11 @@ export class BasicPlayer {
     this.camera = getPerspectiveCamera();
     // this.camera = new OrthographicCamera(-128, 128, 128, -128, -10000, 10000);
     this.scene = new Scene();
+    this.transformer = new TransformControls(this.camera, this.renderer.domElement);
+    this.transformer.addEventListener('change', () => this.renderer.render(this.scene, this.camera));
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.camera.position.set(0, 0, 128);
+    this.camera.lookAt(0, 0, 0);
 
     this.stats = new Stats();
     document.body.appendChild(this.renderer.domElement);
@@ -61,12 +64,6 @@ export class BasicPlayer {
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(window.innerWidth, window.innerHeight);
     });
-
-    // Visualization-specific
-    // positions - todo: set initial positions dynamically
-    this.camera.position.set(64, 64, 64);
-    this.controls.target.set(64, 64, 0); // camera direction
-    this.controls.update();
 
     // globals
     this.audioContext = new AudioContext();
@@ -78,6 +75,7 @@ export class BasicPlayer {
     // Objects
     this.objects = [amplitudeVisualizer, frequencyVisualizer];
     this.objects.forEach(item => this.scene.add(item.mesh));
+    this.transformer.attach(this.objects[0].mesh);
   }
 
   buildControls() {
@@ -94,18 +92,17 @@ export class BasicPlayer {
     const controlTabGroup = controls.addTab({pages: [{title: 'basic'}, {title: 'advanced'}]});
     const basicTab = controlTabGroup.pages[0];
     const advancedTab = controlTabGroup.pages[1];
+    const rotateCells = (x, y) => ({
+      title: [['NW', 'N', 'NE'], ['W', '*', 'E'], ['SW', 'S', 'SE']][y][x],
+      value: [[0, 1, 2], [3, 4, 5], [6, 7, 8]][y][x],
+    });
 
     basicTab.addInput(this.params.directions, 'amplitude', {
       view: 'radiogrid',
       groupName: 'amplitude',
       size: [3, 3],
-      cells: (x, y) => ({
-        title: [['NW', 'N', 'NE'], ['W', '*', 'E'], ['SW', 'S', 'SE']][y][x],
-        value: [[0, 1, 2], [3, 4, 5], [6, 7, 8]][y][x],
-      }),
+      cells: rotateCells,
     }).on('change', (ev) => {
-      console.log(ROTATE_VECTORS[ev.value]);
-      ROTATE_VECTORS[ev.value]
       this.amplitudeVisualizer.rotateByVector3(ROTATE_VECTORS[ev.value]);
     });
 
@@ -115,13 +112,8 @@ export class BasicPlayer {
       view: 'radiogrid',
       groupName: 'frequency',
       size: [3, 3],
-      cells: (x, y) => ({
-        title: [['NW', 'N', 'NE'], ['W', '*', 'E'], ['SW', 'S', 'SE']][y][x],
-        value: [[0, 1, 2], [3, 4, 5], [6, 7, 8]][y][x],
-      }),
+      cells: rotateCells,
     }).on('change', (ev) => {
-      console.log(ROTATE_VECTORS[ev.value]);
-      ROTATE_VECTORS[ev.value]
       this.frequencyVisualizer.rotateByVector3(ROTATE_VECTORS[ev.value]);
     });
 
@@ -142,7 +134,6 @@ export class BasicPlayer {
 
   animate() {
     try {
-      this.controls.update();
       this.updateParams();
       this.update();
       this.renderer.render(this.scene, this.camera);
