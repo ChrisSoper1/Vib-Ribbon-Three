@@ -86,21 +86,23 @@ export class LevelTestApp {
   }
 
   handleInput(event) {
-    let inputs = event.target;
-    if (inputs.BLOCK) {
-      this._change_animation(this.runAction);
-      this.speed = 40;
-    } else if (inputs.PIT) {
-      this._change_animation(this.idleAction);
-      this.speed = 0;
-    } else if (inputs.LOOP) {
-      this._change_animation(this.walkAction);
-      this.speed = 20;
-      this.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
-    } else if (inputs.WAVE) {
-      this._change_animation(this.walkAction);
-      this.speed = 20;
-      this.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), (3 * Math.PI) / 2);
+    if (!this.paused) {
+      let inputs = event.target;
+      if (inputs.BLOCK) {
+        this._change_animation(this.runAction);
+        this.speed = 40;
+      } else if (inputs.PIT) {
+        this._change_animation(this.idleAction);
+        this.speed = 0;
+      } else if (inputs.LOOP) {
+        this._change_animation(this.walkAction);
+        this.speed = 20;
+        this.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
+      } else if (inputs.WAVE) {
+        this._change_animation(this.walkAction);
+        this.speed = 20;
+        this.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), (3 * Math.PI) / 2);
+      }
     }
   }
 
@@ -117,7 +119,7 @@ export class LevelTestApp {
       newAction.enabled = true;
       newAction.setEffectiveTimeScale(1);
       newAction.setEffectiveWeight(1);
-      newAction.play()
+      newAction.play();
       this.animation.crossFadeTo(newAction, 1, true);
       this.animation = newAction;
     }
@@ -201,15 +203,6 @@ export class LevelTestApp {
       this.idleAction = this.mixer.clipAction(gltf.animations[0]);
       this.walkAction = this.mixer.clipAction(gltf.animations[3]);
       this.runAction = this.mixer.clipAction(gltf.animations[1]);
-      this.idleAction.enabled = true;
-      this.idleAction.setEffectiveTimeScale(1);
-      this.idleAction.setEffectiveWeight(0);
-      this.runAction.enabled = true;
-      this.runAction.setEffectiveTimeScale(1);
-      this.runAction.setEffectiveWeight(0);
-      this.walkAction.enabled = true;
-      this.walkAction.setEffectiveTimeScale(1);
-      this.walkAction.setEffectiveWeight(1);
 
       // this.walkAction.play();
       this.animation = this.walkAction;
