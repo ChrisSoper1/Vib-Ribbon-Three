@@ -87,18 +87,40 @@ export class LevelTestApp {
 
   handleInput(event) {
     let inputs = event.target;
-    this.animation.stop();
     if (inputs.BLOCK) {
-      this.animation = this.idleAction;
-      this.speed = 0;
-    } else if (inputs.PIT) {
-      this.animation = this.walkAction;
-      this.speed = 20;
-    } else if (inputs.LOOP) {
-      this.animation = this.runAction;
+      this._change_animation(this.runAction);
       this.speed = 40;
+    } else if (inputs.PIT) {
+      this._change_animation(this.idleAction);
+      this.speed = 0;
+    } else if (inputs.LOOP) {
+      this._change_animation(this.walkAction);
+      this.speed = 20;
+      this.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
+    } else if (inputs.WAVE) {
+      this._change_animation(this.walkAction);
+      this.speed = 20;
+      this.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), (3 * Math.PI) / 2);
     }
-    this.animation.play();
+  }
+
+  /**
+   * I wanted to avoid making this method, please refactor it out ASAP, it does not belong here
+   *
+   * This mutates vibri's state, and should be a part of wherever that ends up.
+   *
+   * This is heavily influenced/inspired by
+   * https://github.com/mrdoob/three.js/blob/master/examples/webgl_animation_skinning_blending.html
+   **/
+  _change_animation(newAction) {
+    if (this.animation !== newAction) {
+      newAction.enabled = true;
+      newAction.setEffectiveTimeScale(1);
+      newAction.setEffectiveWeight(1);
+      newAction.play()
+      this.animation.crossFadeTo(newAction, 1, true);
+      this.animation = newAction;
+    }
   }
 
   animate() {
@@ -167,7 +189,6 @@ export class LevelTestApp {
       this.playerModel.scale.set(10, 10, 10);
       this.playerModel.position.set(0, 0, 0);
       this.playerModel.lookAt(-1, 0, 0);
-      this.animations = gltf.animations;
       this.scene.add(this.playerModel);
 
       this.playerModel.traverse(function (object) {
@@ -177,9 +198,18 @@ export class LevelTestApp {
       this.mixer = new AnimationMixer(this.playerModel);
       this.mixer.timeScale = 1;
 
-      this.idleAction = this.mixer.clipAction(this.animations[0]);
-      this.walkAction = this.mixer.clipAction(this.animations[3]);
-      this.runAction = this.mixer.clipAction(this.animations[1]);
+      this.idleAction = this.mixer.clipAction(gltf.animations[0]);
+      this.walkAction = this.mixer.clipAction(gltf.animations[3]);
+      this.runAction = this.mixer.clipAction(gltf.animations[1]);
+      this.idleAction.enabled = true;
+      this.idleAction.setEffectiveTimeScale(1);
+      this.idleAction.setEffectiveWeight(0);
+      this.runAction.enabled = true;
+      this.runAction.setEffectiveTimeScale(1);
+      this.runAction.setEffectiveWeight(0);
+      this.walkAction.enabled = true;
+      this.walkAction.setEffectiveTimeScale(1);
+      this.walkAction.setEffectiveWeight(1);
 
       // this.walkAction.play();
       this.animation = this.walkAction;
