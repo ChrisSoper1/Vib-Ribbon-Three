@@ -21,7 +21,7 @@ import {
   LOOP,
   PIT,
   WAVE,
-  featureWidth,
+  featureWidth, loadLevel,
 } from './levels';
 
 export class LevelTestApp {
@@ -69,7 +69,9 @@ export class LevelTestApp {
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
 
     this.modelLoaded = this.generatePlayerModel();
-    this.generateExampleLevel();
+    this.level = loadLevel(this.scene);
+    // this.scene.add(this.level._meshes['BLOCK']);
+    // this.generateExampleLevel();
   }
 
   start() {
@@ -136,6 +138,7 @@ export class LevelTestApp {
     if (!this.paused) {
       // Get the time elapsed since the last frame, used for mixer update
       let timeDelta = this.clock.getDelta();
+      // console.log(timeDelta)
 
       // Update the animation mixer
       this.mixer.update(timeDelta);
@@ -156,28 +159,6 @@ export class LevelTestApp {
     // render even if paused (if eventually we have a pause screen)
     this.renderer.render(this.scene, this.camera);
 
-  }
-
-  generateExampleLevel() {
-    this.tempo = 100;
-    for (let i = 0; i < 30; i++) {
-      let obj;
-      if (i === 11) {
-        obj = BLOCK.clone();
-      } else if (i === 13) {
-        obj = PIT.clone();
-      } else if (i === 15) {
-        obj = LOOP.clone();
-      } else if (i === 17) {
-        obj = WAVE.clone();
-      } else if (i === 19) {
-        obj = BLOCKPIT.clone();
-      } else {
-        obj = LINE.clone();
-      }
-      this.scene.add(obj);
-      obj.position.set((i * featureWidth), 0, 0);
-    }
   }
 
   generatePlayerModel() {
