@@ -10,13 +10,11 @@ import {
   AmbientLight,
   AnimationMixer,
   Clock,
-  PerspectiveCamera,
   OrthographicCamera,
   sRGBEncoding,
   Scene,
-  SkeletonHelper,
   Vector3,
-  WebGLRenderer,
+  WebGLRenderer, Line, BufferGeometry, LineBasicMaterial,
 } from "three/src/Three";
 
 import Stats from 'three/examples/jsm/libs/stats.module';
@@ -26,15 +24,7 @@ import {sharedDebugPanel} from "../utils/debug_panel";
 
 const solder_model = require('../assets/Soldier.glb');
 
-import {
-  BLOCK,
-  BLOCKPIT,
-  LINE,
-  LOOP,
-  PIT,
-  WAVE,
-  featureWidth,
-} from '../levels';
+import {featureWidth, featureHeight} from '../levels';
 
 export class VibRibbonApplication {
   constructor() {
@@ -201,12 +191,9 @@ export class VibRibbonApplication {
       this.mixer = new AnimationMixer(this.playerModel);
       this.mixer.timeScale = 1;
 
-      this.idleAction = this.mixer.clipAction(this.animations[0]);
       this.walkAction = this.mixer.clipAction(this.animations[3]);
-      this.runAction = this.mixer.clipAction(this.animations[1]);
 
       this.walkAction.play();
-      // this.runAction.play();
 
       console.log("Model Loaded!");
     });
@@ -225,3 +212,88 @@ export class VibRibbonApplication {
     </table>`;
   }
 }
+
+
+let waveWidthStep = featureWidth / 8;
+let widthStep = featureWidth / 8;
+let heightStep = featureHeight / 8;
+export const LINE = new Line(
+  new BufferGeometry().setFromPoints([
+    new Vector3(0, 0, 0),
+    new Vector3(featureWidth, 0, 0),
+  ]),
+  new LineBasicMaterial({color: 0xFFFFFF}),
+);
+
+export const BLOCK = new Line(
+  new BufferGeometry().setFromPoints([
+    new Vector3(0, 0, 0),
+    new Vector3(0, featureHeight, 0),
+    new Vector3(featureWidth, featureHeight, 0),
+    new Vector3(featureWidth, 0, 0),
+  ]),
+  new LineBasicMaterial({color: 0xFFFFFF}),
+);
+
+export const PIT = new Line(
+  new BufferGeometry().setFromPoints([
+    new Vector3(0, 0, 0),
+    new Vector3(featureWidth / 2, featureHeight * -1, 0),
+    new Vector3(featureWidth, 0, 0),
+  ]),
+  new LineBasicMaterial({color: 0xFFFFFF}),
+);
+
+/** This is incomplete **/
+export const LOOP = new Line(
+  new BufferGeometry().setFromPoints([
+    new Vector3(0, 0, 0),
+    new Vector3(widthStep * 6, heightStep * 1, 0),
+    new Vector3(widthStep * 7, heightStep * 2, 0),
+    new Vector3(widthStep * 7, heightStep * 3, 0),
+    new Vector3(widthStep * 6, heightStep * 4.2, 0),
+    new Vector3(widthStep * 5, heightStep * 4.4, 0),
+    new Vector3(widthStep * 4, heightStep * 4.6, 0),
+    new Vector3(widthStep * 3, heightStep * 4.4, 0),
+    new Vector3(widthStep * 2, heightStep * 4.2, 0),
+    new Vector3(widthStep * 1, heightStep * 3, 0),
+    new Vector3(widthStep * 1, heightStep * 2, 0),
+    new Vector3(widthStep * 2, heightStep * 1, 0),
+    new Vector3(featureWidth, 0, 0),
+  ]),
+  new LineBasicMaterial({color: 0xFFFFFF}),
+);
+
+export const WAVE = new Line(
+  new BufferGeometry().setFromPoints([
+    new Vector3(0, 0, 0),
+    new Vector3(waveWidthStep * 1, featureHeight / 3, 0),
+    new Vector3(waveWidthStep * 2, featureHeight / -3, 0),
+    new Vector3(waveWidthStep * 3, featureHeight / 3, 0),
+    new Vector3(waveWidthStep * 4, featureHeight / -3, 0),
+    new Vector3(waveWidthStep * 5, featureHeight / 3, 0),
+    new Vector3(waveWidthStep * 6, featureHeight / -3, 0),
+    new Vector3(waveWidthStep * 7, featureHeight / 3, 0),
+    new Vector3(featureWidth, 0, 0),
+  ]),
+  new LineBasicMaterial({color: 0xFFFFFF}),
+);
+
+export const BLOCKPIT = new Line(
+  new BufferGeometry().setFromPoints([
+    new Vector3(0, 0, 0),
+    new Vector3(0, featureHeight, 0),
+    new Vector3(featureWidth / 2, featureHeight / 2, 0),
+    new Vector3(featureWidth, featureHeight, 0),
+    new Vector3(featureWidth, 0, 0),
+  ]),
+  new LineBasicMaterial({color: 0xFFFFFF}),
+);
+
+const BLOCKLOOP = [];
+const BLOCKWAVE = [];
+
+const PITLOOP = [];
+const PITWAVE = [];
+
+const LOOPWAVE = [];
