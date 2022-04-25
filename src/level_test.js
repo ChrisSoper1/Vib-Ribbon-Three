@@ -10,11 +10,11 @@ import {
 } from "three/src/Three";
 
 import Stats from 'three/examples/jsm/libs/stats.module';
-import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
-import MODEL_FILE from './assets/Soldier.glb';
 import {sharedDebugPanel} from "./utils/debug_panel";
 import {VibRibbonControls} from "./controls";
 import {loadLevel} from './levels';
+import {Player} from "./player";
+
 
 
 export class LevelTestApp {
@@ -61,7 +61,9 @@ export class LevelTestApp {
 
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
 
-    this.modelLoaded = this.generatePlayerModel();
+    this.vibri = new Player(this.speed)
+
+    this.modelLoaded = this.vibri.generatePlayerModel(this.scene);
     this.level = loadLevel(this.scene);
     // this.scene.add(this.level._meshes['BLOCK']);
     // this.generateExampleLevel();
@@ -84,41 +86,23 @@ export class LevelTestApp {
     if (!this.paused) {
       let inputs = event.target;
       if (inputs.BLOCK) {
-        this._change_animation(this.runAction);
+        this.vibri.change_animation("RUN");
         // this.speed = 40; // fixing speed for now
       } else if (inputs.PIT) {
-        this._change_animation(this.idleAction);
-        this.speed = 0;
+        this.vibri.change_animation("IDLE");
+        this.vibri.speed = 0;
       } else if (inputs.LOOP) {
-        this._change_animation(this.walkAction);
-        this.speed = 20;
-        this.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
+        this.vibri.change_animation("WALK");
+        this.vibri.speed = 20;
+        this.vibri.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
       } else if (inputs.WAVE) {
-        this._change_animation(this.walkAction);
-        this.speed = 20;
-        this.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), (3 * Math.PI) / 2);
+        this.vibri.change_animation("WALK");
+        this.vibri.speed = 20;
+        this.vibri.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), (3 * Math.PI) / 2);
       }
     }
   }
 
-  /**
-   * I wanted to avoid making this method, please refactor it out ASAP, it does not belong here
-   *
-   * This mutates vibri's state, and should be a part of wherever that ends up.
-   *
-   * This is heavily influenced/inspired by
-   * https://github.com/mrdoob/three.js/blob/master/examples/webgl_animation_skinning_blending.html
-   **/
-  _change_animation(newAction) {
-    if (this.animation !== newAction) {
-      newAction.enabled = true;
-      newAction.setEffectiveTimeScale(1);
-      newAction.setEffectiveWeight(1);
-      newAction.play();
-      this.animation.crossFadeTo(newAction, 1, true);
-      this.animation = newAction;
-    }
-  }
 
   animate() {
     requestAnimationFrame(() => this.animate());
@@ -133,15 +117,11 @@ export class LevelTestApp {
       let timeDelta = this.clock.getDelta();
       // console.log(timeDelta)
 
-      // Update the animation mixer
-      this.mixer.update(timeDelta);
-
-      // update position
-      this.playerModel.translateOnAxis(new Vector3(0, 0, -1), timeDelta * this.speed);
+      // update vibri
+      this.vibri.update(timeDelta);
 
       // Update camera
-      this.playerModel.getWorldPosition(this.playerWorldPos);
-      this.camera.left = this.playerWorldPos.x;
+      this.camera.left = this.vibri.worldPos.x;
       this.camera.right = this.camera.left + 50;
       this.camera.updateProjectionMatrix();
     }
@@ -152,41 +132,6 @@ export class LevelTestApp {
     // render even if paused (if eventually we have a pause screen)
     this.renderer.render(this.scene, this.camera);
 
-  }
-
-  generatePlayerModel() {
-    const loader = new GLTFLoader();
-    // convert callback to async by allowing promise to generate callback functions
-    let result = new Promise(resolve => loader.load(MODEL_FILE, resolve));
-
-    // Add a .then to the handling chain, and then set result to the new chain
-    result = result.then(gltf => {
-      this.playerModel = gltf.scene;
-      this.playerModel.scale.set(12, 12, 12);
-      this.playerModel.position.set(0, 0, 0);
-      this.playerModel.lookAt(-1, 0, 0);
-      this.scene.add(this.playerModel);
-
-      this.playerModel.traverse(function (object) {
-        if (object.isMesh) object.castShadow = true;
-      });
-
-      this.mixer = new AnimationMixer(this.playerModel);
-      this.mixer.timeScale = 1;
-
-      this.idleAction = this.mixer.clipAction(gltf.animations[0]);
-      this.walkAction = this.mixer.clipAction(gltf.animations[3]);
-      this.runAction = this.mixer.clipAction(gltf.animations[1]);
-
-      // this.walkAction.play();
-      this.animation = this.walkAction;
-      this.animation.play();
-
-      console.log("Model Loaded!");
-    });
-
-    // Return the promise for further processing
-    return result;
   }
 
   _debug() {

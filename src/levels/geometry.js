@@ -1,7 +1,7 @@
 import {Vector3} from "three/src/Three";
 
 export const featureWidth = 10;
-export const featureHeight = 30;
+export const featureHeight = 20;
 
 export function calcBlockVertexes(startPosition) {
   return [

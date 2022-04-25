@@ -72,8 +72,8 @@ export class Level {
 }
 
 export function loadLevel(scene, speed = 20, features = null) {
-  // features = L_BLOCK1000;
+  features = L_BLOCK1000;
   // features = L_PIT500;
-  features = L_BLOCKPIT500;
+  // features = L_BLOCKPIT500;
   return new Level(features, scene, speed);
 }
