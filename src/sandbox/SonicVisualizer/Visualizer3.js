@@ -4,6 +4,15 @@
  *
  *  TODO: https://github.com/chrisguttandin/standardized-audio-context appears to fix the above issue, may be worth
  *   considering
+ *
+ * Using SonicVisualizer3
+ *
+ * Place this code in the entrypoint index.js
+ *
+ *     import {BasicPlayer} from './sandbox/SonicVisualizer';
+ *     const audioFile = './song.mp3';
+ *     const app = new SonicVisualizer3(audioFile);
+ *     app.start()
  */
 import {
   AmbientLight,
@@ -32,8 +41,8 @@ import {
 
 import {OfflineAudioAnalyser} from './OfflineAudioAnalyzer';
 
-import {sharedDebugPanel} from "../utils/debug_panel";
-import {getDefaultCamera, getDefaultRenderer} from "../utils/helpers";
+import {sharedDebugPanel} from "../../utils/debug_panel";
+import {getDefaultCamera, getDefaultRenderer} from "./helpers";
 
 const fftSize = 1024;
 const sampleRate = 44100;

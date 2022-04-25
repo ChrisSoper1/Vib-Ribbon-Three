@@ -1,5 +1,5 @@
 import {AudioLoader, OrthographicCamera, PerspectiveCamera, WebGLRenderer} from "three/src/Three";
-import {AudioAnalyser} from "../SonicVisualizer/AudioAnalyzer";
+import {AudioAnalyser} from "./AudioAnalyzer";
 
 export function getDefaultRenderer() {
   let renderer = new WebGLRenderer({antialias: true});

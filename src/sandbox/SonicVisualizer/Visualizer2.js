@@ -1,20 +1,20 @@
 /**
- * NOTE: I like this class based pattern for applications, it may be worth considering typescript to formalize it
- **/
+ * Using SonicVisualizer2
+ *
+ * Place this code in the entrypoint index.js
+ *
+ *     import {BasicPlayer} from './sandbox/SonicVisualizer';
+ *     const audioFile = './song.mp3';
+ *     const app = new SonicVisualizer2(audioFile);
+ *     app.start()
+ */
+
 import {
   AmbientLight,
-  AnimationMixer,
   Audio as ThreeAudio,
   AudioLoader,
   AudioListener,
-  LuminanceFormat,
-  RedFormat,
-  DataTexture,
   BufferAttribute,
-  ShaderMaterial,
-  PlaneGeometry,
-  Mesh,
-  Clock,
   OrthographicCamera,
   Scene,
   Points,
@@ -22,20 +22,17 @@ import {
   PointsMaterial,
   Line,
   LineBasicMaterial,
-  Vector3,
   WebGLRenderer,
 } from "three/src/Three";
 
 import {AudioAnalyser} from './AudioAnalyzer';
 
-import {sharedDebugPanel} from "../utils/debug_panel";
+import {sharedDebugPanel} from "../../utils/debug_panel";
 
 const fftSize = 1024;
-// const audioFile = './Sam_and_Dave-Hold_on_Im_coming.mp3';
-const audioFile = './A History of Bad Men.mp3';
 
 export class SonicVisualizer2 {
-  constructor() {
+  constructor(audioFile) {
     this.renderer = new WebGLRenderer({antialias: true});
     this.renderer.setClearColor(0x000000);
     this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -52,7 +49,7 @@ export class SonicVisualizer2 {
 
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
 
-    this.audioLoaded = this.loadAudio();
+    this.audioLoaded = this.loadAudio(audioFile);
 
 
     this.geometry = new BufferGeometry();
@@ -79,7 +76,7 @@ export class SonicVisualizer2 {
     this.audioLoaded.then(() => this.animate());
   }
 
-  loadAudio() {
+  loadAudio(audioFile) {
     this.listener = new AudioListener();
     this.audio = new ThreeAudio(this.listener);
     this.audioContext = new AudioContext();

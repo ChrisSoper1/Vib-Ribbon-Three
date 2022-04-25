@@ -1,10 +1,20 @@
 /**
  * This is a generic stage for playing music and attaching visualizers
+ *
+ * Using BasicPlayer
+ *
+ * Place this code in the entrypoint index.js
+ *
+ *     import {BasicPlayer} from './sandbox/SonicVisualizer';
+ *     const app = new BasicPlayer();
+ *     const audioFile = './song.mp3';
+ *     app.start(audioFile);
  */
-import {getDefaultCamera, getDefaultRenderer, getPerspectiveCamera, loadAudio} from "./utils/helpers";
+
+import {getDefaultCamera, getDefaultRenderer, getPerspectiveCamera, loadAudio} from "./helpers";
 import {AmbientLight, Box3, Box3Helper, BoxHelper, OrthographicCamera, Scene, Vector3} from "three/src/Three";
-import {FrequencyPlaneVisualizer} from "./SonicVisualizer/FrequencyPlaneVisualizer";
-import {SimpleAmplitudeVisualizer} from "./SonicVisualizer/SimpleAmplitudeVisualizer";
+import {FrequencyPlaneVisualizer} from "./FrequencyPlaneVisualizer";
+import {SimpleAmplitudeVisualizer} from "./SimpleAmplitudeVisualizer";
 import {Pane} from "tweakpane";
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import Stats from "three/examples/jsm/libs/stats.module";

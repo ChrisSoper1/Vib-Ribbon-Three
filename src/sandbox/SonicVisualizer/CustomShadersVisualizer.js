@@ -1,9 +1,14 @@
 /**
- * NOTE: I like this class based pattern for applications, it may be worth considering typescript to formalize it
- **/
+ * To use this visualizer Place this code in the entrypoint file
+ *
+ *     import {CustomShadersVisualizer} from './sandbox/SonicVisualizer';
+ *     const audioFile = './song.mp3';
+ *     const app = new CustomShadersVisualizer(audioFile);
+ *     app.start();
+ */
+
 import {
   AmbientLight,
-  AnimationMixer,
   Audio as ThreeAudio,
   AudioLoader,
   AudioListener,
@@ -16,14 +21,12 @@ import {
   Clock,
   OrthographicCamera,
   Scene,
-  Vector3,
   WebGLRenderer,
 } from "three/src/Three";
 
 import {AudioAnalyser} from './AudioAnalyzer';
 
 const fftSize = 1024;
-const audioFile = './Sam_and_Dave-Hold_on_Im_coming.mp3';
 
 // NOTE: Install the "GLSL Support" IDEA plugin for syntax highlighting
 // language=GLSL
@@ -61,8 +64,8 @@ const fragment_shader2 = `
     }
 `;
 
-export class SonicVisualizer {
-  constructor() {
+export class CustomShadersVisualizer {
+  constructor(audioFile) {
     this.renderer = new WebGLRenderer({antialias: true});
     this.renderer.setClearColor(0x000000);
     this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -80,24 +83,18 @@ export class SonicVisualizer {
 
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
 
-    this.audioLoaded = this.loadAudio();
+    this.audioLoaded = this.loadAudio(audioFile);
   }
 
   start() {
     this.audioLoaded.then(() => this.animate());
   }
 
-  loadAudio() {
+  loadAudio(audioFile) {
     this.listener = new AudioListener();
     this.audio = new ThreeAudio(this.listener);
 
-    // var biquadFilter = this.audio.context.createBiquadFilter();
-    // biquadFilter.type = "lowpass";
-    // biquadFilter.frequency.setValueAtTime(1000, this.audio.context.currentTime);
-    // biquadFilter.gain.setValueAtTime(25, this.audio.context.currentTime);
-    // this.audio.filters.push(biquadFilter)
-
-    this.audioFile = audioFile; // todo: make this an argument
+    this.audioFile = audioFile;
     this.loader = new AudioLoader();
 
     let result = new Promise(resolve => this.loader.load(this.audioFile, resolve));
@@ -126,7 +123,6 @@ export class SonicVisualizer {
     this.geometry = new PlaneGeometry(1, 1);
     this.mesh = new Mesh(this.geometry, this.material);
 
-
     this.material2 = new ShaderMaterial({
       uniforms: this.uniforms,
       vertexShader: vertex_shader,
@@ -146,7 +142,6 @@ export class SonicVisualizer {
   animate() {
     requestAnimationFrame(() => this.animate());
 
-
     // This looks like it updates the value by in this.uniforms by reference...
     // this.analyser.getFrequencyData();
     this.analyser.getTimeDomainData();
@@ -157,5 +152,4 @@ export class SonicVisualizer {
 
     this.renderer.render(this.scene, this.camera);
   }
-
 }

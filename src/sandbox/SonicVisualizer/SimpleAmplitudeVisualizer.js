@@ -25,8 +25,8 @@ import {interpolateTurbo, interpolateYlOrBr} from "d3-scale-chromatic";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 
-import {sharedDebugPanel} from "../utils/debug_panel";
-import {getDefaultCamera, getDefaultRenderer, getPerspectiveCamera, loadAudio} from "../utils/helpers";
+import {sharedDebugPanel} from "../../utils/debug_panel";
+import {getDefaultCamera, getDefaultRenderer, getPerspectiveCamera, loadAudio} from "./helpers";
 import {scaleLinear} from "d3";
 import {VisualizerBase} from "./VisualizerBase";
 

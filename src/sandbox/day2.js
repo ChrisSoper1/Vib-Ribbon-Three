@@ -1,3 +1,11 @@
+/**
+ * Using This module:
+ * Place this code in the entrypoint index.js
+ *
+ *     import {VibRibbonApplication} from './sandbox/day2';
+ *     const app = new VibRibbonApplication();
+ *     app.start();
+ */
 import {
   AmbientLight,
   AnimationMixer,
@@ -14,9 +22,9 @@ import {
 import Stats from 'three/examples/jsm/libs/stats.module';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {MapControls} from "three/examples/jsm/controls/OrbitControls";
-import {sharedDebugPanel} from "./utils/debug_panel";
+import {sharedDebugPanel} from "../utils/debug_panel";
 
-const solder_model = require('./assets/Soldier.glb');
+const solder_model = require('../assets/Soldier.glb');
 
 import {
   BLOCK,
@@ -26,7 +34,7 @@ import {
   PIT,
   WAVE,
   featureWidth,
-} from './levels';
+} from '../levels';
 
 export class VibRibbonApplication {
   constructor() {

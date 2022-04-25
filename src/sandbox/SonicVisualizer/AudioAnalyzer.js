@@ -1,4 +1,4 @@
-import {sharedDebugPanel} from "../utils/debug_panel";
+import {sharedDebugPanel} from "../../utils/debug_panel";
 
 export class AudioAnalyser {
   constructor(context, fftSize = 2048) {

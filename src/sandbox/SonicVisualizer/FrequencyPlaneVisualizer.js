@@ -31,7 +31,7 @@ import {scaleSequential} from "d3-scale";
 import {interpolateTurbo} from "d3-scale-chromatic";
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
-import {getDefaultRenderer, getPerspectiveCamera, loadAudio} from "../utils/helpers";
+import {getDefaultRenderer, getPerspectiveCamera, loadAudio} from "./helpers";
 import {VisualizerBase} from "./VisualizerBase";
 
 export class FrequencyPlaneVisualizer extends VisualizerBase {
