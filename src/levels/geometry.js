@@ -5,11 +5,29 @@ import {
   Vector3,
 } from "three/src/Three";
 
-export const featureWidth = 15;
-export const featureHeight = 20;
+export const featureWidth = 10;
+export const featureHeight = 30;
 let waveWidthStep = featureWidth / 8;
 let widthStep = featureWidth / 8;
 let heightStep = featureHeight / 8;
+
+export function calcBlockVertexes(startPosition) {
+  return [
+    new Vector3(startPosition, 0, 0),
+    new Vector3(startPosition, featureHeight, 0),
+    new Vector3(startPosition + featureWidth, featureHeight, 0),
+    new Vector3(startPosition + featureWidth, 0, 0),
+  ];
+}
+
+export function calcPitVertexes(startPosition) {
+  return [
+    new Vector3(startPosition, 0, 0),
+    new Vector3(startPosition + (featureWidth / 2), featureHeight * -1, 0),
+    new Vector3(startPosition + featureWidth, 0, 0),
+  ];
+}
+
 
 export const LINE = new Line(
   new BufferGeometry().setFromPoints([

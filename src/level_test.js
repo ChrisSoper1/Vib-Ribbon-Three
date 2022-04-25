@@ -85,7 +85,7 @@ export class LevelTestApp {
       let inputs = event.target;
       if (inputs.BLOCK) {
         this._change_animation(this.runAction);
-        this.speed = 40;
+        // this.speed = 40; // fixing speed for now
       } else if (inputs.PIT) {
         this._change_animation(this.idleAction);
         this.speed = 0;
@@ -162,7 +162,7 @@ export class LevelTestApp {
     // Add a .then to the handling chain, and then set result to the new chain
     result = result.then(gltf => {
       this.playerModel = gltf.scene;
-      this.playerModel.scale.set(10, 10, 10);
+      this.playerModel.scale.set(12, 12, 12);
       this.playerModel.position.set(0, 0, 0);
       this.playerModel.lookAt(-1, 0, 0);
       this.scene.add(this.playerModel);
@@ -194,5 +194,4 @@ export class LevelTestApp {
     <tr><th>Paused</th><td>${this.paused}</td></tr>
     </table>`;
   }
-
 }

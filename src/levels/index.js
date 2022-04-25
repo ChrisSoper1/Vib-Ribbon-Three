@@ -1,23 +1,24 @@
 export * from './geometry';
-import {BLOCK, PIT} from "./geometry";
-import {BufferGeometry, InstancedMesh, DynamicDrawUsage, LineBasicMaterial, Vector3, Object3D} from "three/src/Three";
+import {calcBlockVertexes, calcPitVertexes, featureWidth} from "./geometry";
+import {BufferGeometry, LineBasicMaterial, Vector3, Line} from "three/src/Three";
 
 const L_BLOCK1000 = require('./level_block1000.json');
 const L_PIT500 = require('./level_pit500.json');
 const L_BLOCKPIT500 = require('./level_blockpit500.json');
 
-const _geom_map = {BLOCK, PIT};
+const _geom_method_map = {BLOCK: calcBlockVertexes, PIT: calcPitVertexes};
 
 export class Feature {
   geometry_type = 'LINE';
   inputs_required = null;
   time = null;
   animation = null;
-  input_window_length = 100;
+  vertexes = [];
 }
 
 /**
- * This would make a lot of sense if it was implemented as an iterable, which features could be pushed and popped.
+ * This would make a lot of sense if it was implemented as an iterable or FIFO queue,
+ * which features could be pushed and popped.
  */
 export class Level {
   song = null;
@@ -26,48 +27,53 @@ export class Level {
   _index = [];
   _geometryCount = {'BLOCK': 0, 'PIT': 0, 'WAVE': 0, 'LOOP': 0};
 
-  /**
-   * LoadLevel
-   *
-   */
-  constructor(features, scene) {
+  constructor(features, scene, speed) {
     this.features = Array.from(features);
     this._index = this.features.map(x => x.time);
+    this._speed = speed;
+    this._vertexes = [];
     this._generateMeshes(scene);
   }
 
+  timestampToPosition(timestamp) {
+    return timestamp * this._speed;
+  }
+
+  positionToTimestamp(position) {
+    return position / this._speed;
+  }
+
   _generateMeshes(scene) {
-    const dummy = new Object3D();
     this._geometryCount = this.features.reduce((output, curr) => {
       output[curr.geometry_type] += 1;
       return output;
     }, this._geometryCount);
 
-    /* I hope to use an instanced geometry at some point */
-    /* see https://github.com/mrdoob/three.js/blob/master/examples/webgl_instancing_dynamic.html */
-    // this._meshes['BLOCK'] = new InstancedMesh(BLOCK, MATERIAL, this._geometryCount['BLOCK']);
-    // this._meshes['BLOCK'].instanceMatrix.setUsage(DynamicDrawUsage);
-
+    let distanceGenerated = 0;
     this.features.forEach((feature, index) => {
-      const obj = _geom_map[feature.geometry_type].clone();
-      scene.add(obj);
-      obj.position.set((feature.time / 10), 0, 0);
+      const featureStartPos = this.positionToTimestamp(feature.time);
 
-      /* see https://github.com/mrdoob/three.js/blob/master/examples/webgl_instancing_dynamic.html*/
-      // dummy.position.set(1, 0, 0);
-      // dummy.rotation.x = 0;
-      // dummy.rotation.y = 0;
-      // dummy.rotation.z = 0;
-      // dummy.updateMatrix();
-      // this._meshes['BLOCK'].setMatrixAt(index, dummy.matrix);
+      // generate line from previous feature
+      if (distanceGenerated !== 0) {
+        this._vertexes.push(...[new Vector3(distanceGenerated, 0, 0), new Vector3(featureStartPos, 0, 0)]);
+      }
+
+      feature.vertexes = _geom_method_map[feature.geometry_type](featureStartPos);
+      this._vertexes.push(...feature.vertexes);
+      distanceGenerated = featureStartPos + featureWidth;
     });
-    // this._meshes['BLOCK'].instanceMatrix.needsUpdate = true;
+
+    let mesh = new Line(
+      new BufferGeometry().setFromPoints(this._vertexes),
+      new LineBasicMaterial({color: 0xFFFFFF}),
+    );
+    scene.add(mesh);
   }
 }
 
-export function loadLevel(scene, features = null) {
-  // features = features || L_BLOCK1000;
-  // features = features || L_PIT500;
-  features = features || L_BLOCKPIT500;
-  return new Level(features, scene);
+export function loadLevel(scene, speed = 20, features = null) {
+  // features = L_BLOCK1000;
+  // features = L_PIT500;
+  features = L_BLOCKPIT500;
+  return new Level(features, scene, speed);
 }
