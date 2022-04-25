@@ -11,18 +11,11 @@ import {
 
 import Stats from 'three/examples/jsm/libs/stats.module';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
+import MODEL_FILE from './assets/Soldier.glb';
 import {sharedDebugPanel} from "./utils/debug_panel";
-
 import {VibRibbonControls} from "./controls";
-import {
-  BLOCK,
-  BLOCKPIT,
-  LINE,
-  LOOP,
-  PIT,
-  WAVE,
-  featureWidth, loadLevel,
-} from './levels';
+import {loadLevel} from './levels';
+
 
 export class LevelTestApp {
   constructor() {
@@ -164,7 +157,7 @@ export class LevelTestApp {
   generatePlayerModel() {
     const loader = new GLTFLoader();
     // convert callback to async by allowing promise to generate callback functions
-    let result = new Promise(resolve => loader.load('./Soldier.glb', resolve));
+    let result = new Promise(resolve => loader.load(MODEL_FILE, resolve));
 
     // Add a .then to the handling chain, and then set result to the new chain
     result = result.then(gltf => {

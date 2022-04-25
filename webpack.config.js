@@ -17,11 +17,7 @@ module.exports = {
     rules: [
       {
         test: /\.(png|jpe?g|gif|glb)$/i,
-        use: [
-          {
-            loader: 'file-loader',
-          },
-        ],
+        type: 'asset/resource',
       },
     ],
   },
