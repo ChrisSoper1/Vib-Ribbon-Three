@@ -6,23 +6,22 @@ export class VibRibbonControls extends EventDispatcher {
   LOOP = false;
   WAVE = false;
 
-  settings = {
-    // these are KeyboardEvent.codes https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code
-    inputKeyCodes: {
-      BLOCK: 'ArrowUp',
-      PIT: 'ArrowDown',
-      LOOP: 'ArrowLeft',
-      WAVE: 'ArrowRight',
-      PAUSE: 'Escape',
-    },
+  // these are KeyboardEvent.codes https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code
+  inputKeyCodes = {
+    BLOCK: 'ArrowUp',
+    PIT: 'ArrowDown',
+    LOOP: 'ArrowLeft',
+    WAVE: 'ArrowRight',
+    PAUSE: 'Escape',
   };
 
-  constructor() {
+  constructor(settings) {
     super();
+    this.inputKeyCodes = settings.controls;
+
     // This is some nonsense having to do with how "this" works in javascript.  There is almost definitely
     // a better way to handle it, but "this code" should still work for now
     // https://stackoverflow.com/questions/43727516/how-adding-event-handler-inside-a-class-with-a-class-method-as-the-callback
-
     this.onKeyDown = this._onKeyDown.bind(this);
     this.onKeyUp = this._onKeyUp.bind(this);
   }
@@ -41,23 +40,23 @@ export class VibRibbonControls extends EventDispatcher {
   _onKeyDown(event) {
     let needsUpdate = false;
     switch (event.code) {
-      case this.settings.inputKeyCodes.BLOCK:
+      case this.inputKeyCodes.BLOCK:
         this.BLOCK = true;
         needsUpdate = true;
         break;
-      case this.settings.inputKeyCodes.PIT:
+      case this.inputKeyCodes.PIT:
         this.PIT = true;
         needsUpdate = true;
         break;
-      case this.settings.inputKeyCodes.LOOP:
+      case this.inputKeyCodes.LOOP:
         this.LOOP = true;
         needsUpdate = true;
         break;
-      case this.settings.inputKeyCodes.WAVE:
+      case this.inputKeyCodes.WAVE:
         this.WAVE = true;
         needsUpdate = true;
         break;
-      case this.settings.inputKeyCodes.PAUSE:
+      case this.inputKeyCodes.PAUSE:
         this.dispatchEvent({'type': 'pause'});
         break;
     }
@@ -70,16 +69,16 @@ export class VibRibbonControls extends EventDispatcher {
 
   _onKeyUp(event) {
     switch (event.code) {
-      case this.settings.inputKeyCodes.BLOCK:
+      case this.inputKeyCodes.BLOCK:
         this.BLOCK = false;
         break;
-      case this.settings.inputKeyCodes.PIT:
+      case this.inputKeyCodes.PIT:
         this.PIT = false;
         break;
-      case this.settings.inputKeyCodes.LOOP:
+      case this.inputKeyCodes.LOOP:
         this.LOOP = false;
         break;
-      case this.settings.inputKeyCodes.WAVE:
+      case this.inputKeyCodes.WAVE:
         this.WAVE = false;
         break;
     }

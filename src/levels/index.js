@@ -8,15 +8,8 @@ const L_BLOCKPIT500 = require('./level_blockpit500.json');
 
 const _geom_method_map = {BLOCK: calcBlockVertexes, PIT: calcPitVertexes};
 
-export class Feature {
-  geometry_type = 'LINE';
-  inputs_required = null;
-  time = null;
-  animation = null;
-  vertexes = [];
-}
-
 /**
+ * A level is a collection of time-indexed features.
  * This would make a lot of sense if it was implemented as an iterable or FIFO queue,
  * which features could be pushed and popped.
  */
@@ -31,8 +24,8 @@ export class Level {
     this.features = Array.from(features);
     this._index = this.features.map(x => x.time);
     this._speed = speed;
-    this._vertexes = [];
-    this._generateMeshes(scene);
+    this._vertices = [];
+    this._generateMesh(scene);
   }
 
   timestampToPosition(timestamp) {
@@ -43,7 +36,7 @@ export class Level {
     return position / this._speed;
   }
 
-  _generateMeshes(scene) {
+  _generateMesh(scene) {
     this._geometryCount = this.features.reduce((output, curr) => {
       output[curr.geometry_type] += 1;
       return output;
@@ -55,16 +48,19 @@ export class Level {
 
       // generate line from previous feature
       if (distanceGenerated !== 0) {
-        this._vertexes.push(...[new Vector3(distanceGenerated, 0, 0), new Vector3(featureStartPos, 0, 0)]);
+        this._vertices.push(...[
+          new Vector3(distanceGenerated, 0, 0),
+          new Vector3(featureStartPos, 0, 0),
+        ]);
       }
 
       feature.vertexes = _geom_method_map[feature.geometry_type](featureStartPos);
-      this._vertexes.push(...feature.vertexes);
+      this._vertices.push(...feature.vertexes);
       distanceGenerated = featureStartPos + featureWidth;
     });
 
     let mesh = new Line(
-      new BufferGeometry().setFromPoints(this._vertexes),
+      new BufferGeometry().setFromPoints(this._vertices),
       new LineBasicMaterial({color: 0xFFFFFF}),
     );
     scene.add(mesh);

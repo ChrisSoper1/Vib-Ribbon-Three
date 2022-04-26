@@ -3,19 +3,26 @@
   "version": "0.0.1",
   "description": "Vib Ribbon Inspired Game",
   "main": "src/index.js",
+  "types": "index.d.ts",
   "scripts": {
     "build": "webpack",
-    "dev": "webpack-dev-server",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "webpack-dev-server"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ChrisSoper1/Vib-Ribbon-Three.git"
   },
-  "keywords": [
-    "Vib",
-    "Ribbon",
-    "Three"
+  "contributors": [
+    {
+      "name": "Zelia Sequeira",
+      "url": "https://github.com/zsequeira9",
+      "githubUsername": "zsequeira9"
+    },
+    {
+      "name": "Chris Soper",
+      "url": "https://github.com/chrissoper1",
+      "githubUsername": "chrissoper1"
+    }
   ],
   "author": "Sequeira, Zelia; Soper, Chris",
   "license": "GPL-3.0-or-later",
