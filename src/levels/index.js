@@ -1,6 +1,7 @@
 export * from './geometry';
 import {calcBlockVertexes, calcPitVertexes, featureWidth} from "./geometry";
 import {BufferGeometry, LineBasicMaterial, Vector3, Line} from "three/src/Three";
+import S_METRONOME500 from '../assets/metronome500.mp3';
 
 const L_BLOCK1000 = require('./level_block1000.json');
 const L_PIT500 = require('./level_pit500.json');
@@ -20,7 +21,8 @@ export class Level {
   _index = [];
   _geometryCount = {'BLOCK': 0, 'PIT': 0, 'WAVE': 0, 'LOOP': 0};
 
-  constructor(features, scene, speed) {
+  constructor(features, speed, song) {
+    this.song = song;
     this.features = Array.from(features);
     this._index = this.features.map(x => x.time);
     this._speed = speed;
@@ -58,9 +60,10 @@ export class Level {
   }
 }
 
-export function loadLevel(scene, speed = 20, features = null) {
-  features = L_BLOCK1000;
+export function loadLevel(speed) {
+  let features = L_BLOCK1000;
+  let song = S_METRONOME500;
   // features = L_PIT500;
   // features = L_BLOCKPIT500;
-  return new Level(features, scene, speed);
+  return new Level(features, speed, song);
 }

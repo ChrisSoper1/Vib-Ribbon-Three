@@ -20,6 +20,7 @@ export class Player {
   constructor(speed) {
     this.speed = speed;
     this.worldPos = new Vector3();
+    this.loaded = this.generatePlayerModel()
   }
 
   /**

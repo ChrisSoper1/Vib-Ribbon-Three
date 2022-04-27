@@ -6,6 +6,7 @@ import {
   Scene,
   Vector3,
   WebGLRenderer,
+  AudioLoader,
 } from "three/src/Three";
 
 import Stats from 'three/examples/jsm/libs/stats.module';
@@ -30,8 +31,11 @@ export class LevelTestApp {
         WAVE: 'ArrowRight',
         PAUSE: 'Escape',
       },
-      defaultSpeed: 20,
+      defaultSpeed: 10,
     };
+
+    /** @type {Feature|null} */
+    this.featureBuffer = null;
 
     // region boilerplate
     this.renderer = new WebGLRenderer({antialias: true});
@@ -62,27 +66,38 @@ export class LevelTestApp {
     this.controls.addEventListener('input', (event) => this.handleInput(event));
     // endregion
 
-    // Variables which should be reused each animation cycle
-    this.speed = 20;
-    this.animation = null;
+    // Set the stage
+    this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
+
+    this.vibri = new Player(this.settings.defaultSpeed);
+    this.vibri.loaded.then(playerModel => this.scene.add(playerModel));
+
+    this.level = loadLevel(this.settings.defaultSpeed);
+    this.scene.add(this.level.generateMesh());
+    this.audioContext = new AudioContext();
+    this._songLoader = loadSong(this.level.song, this.audioContext);
+    this._songLoader.then(source => this.song = source);
+    this._audio_telemetry = {
+      songPosition: 0,
+      songDuration: 0,
+    };
 
     // Configure dev info
     sharedDebugPanel.addLoggerCallback(() => this._debug(), 20);
     sharedDebugPanel.addLoggerCallback(() => this.controls._debug(), 10);
     sharedDebugPanel.enable();
 
-    this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
-
-    this.vibri = new Player(this.speed);
-
-    this.modelLoaded = this.vibri.generatePlayerModel()
-                           .then(playerModel => this.scene.add(playerModel));
-    this.level = loadLevel();
-    this.scene.add(this.level.generateMesh());
   }
 
   start() {
-    this.modelLoaded.then(() => this.animate());
+    Promise.all([
+      this.vibri.loaded,
+      this._songLoader,
+    ]).then(() => {
+      this._audio_telemetry.songDuration = this.song.buffer.duration;
+      this.song.start();
+      this.animate();
+    });
   }
 
   pause() {
@@ -99,7 +114,6 @@ export class LevelTestApp {
       let inputs = event.target;
       if (inputs.BLOCK) {
         this.vibri.changeAnimation("RUN");
-        // this.speed = 40; // fixing speed for now
       } else if (inputs.PIT) {
         this.vibri.changeAnimation("IDLE");
         this.vibri.speed = 0;
@@ -136,6 +150,7 @@ export class LevelTestApp {
     }
 
     // update debug info even if paused
+    this._audio_telemetry.songPosition = this.audioContext.getOutputTimestamp().contextTime;
     sharedDebugPanel.update();
 
     // render even if paused (if eventually we have a pause screen)
@@ -145,6 +160,23 @@ export class LevelTestApp {
   _debug() {
     return `<table>
     <tr><th>Paused</th><td>${this.paused}</td></tr>
-    </table>`;
+    <tr><td colspan="2"></td></tr>
+    <tr><th>Vibri Posision</th><td>${this.vibri.worldPos.x.toFixed((3))}</td></tr>
+    <tr><th>Song Position</th><td>${this._audio_telemetry.songPosition.toFixed(4)*10}</td></tr>
+    <tr><th>Song Duration</th><td>${this._audio_telemetry.songDuration.toFixed(1)}</td></tr>
+    </table>
+    `;
   }
 }
+
+function loadSong(audioFile, audioContext) {
+  const loader = new AudioLoader();
+  return new Promise(resolve => loader.load(audioFile, resolve))
+    .then(buffer => {
+      // noinspection JSCheckFunctionSignatures
+      const source = new AudioBufferSourceNode(audioContext, {buffer: buffer});
+      source.connect(audioContext.destination);
+      return source;
+    });
+}
+
