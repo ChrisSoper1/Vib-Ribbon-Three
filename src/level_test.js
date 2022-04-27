@@ -31,7 +31,7 @@ export class LevelTestApp {
         WAVE: 'ArrowRight',
         PAUSE: 'Escape',
       },
-      defaultSpeed: 10,
+      defaultSpeed: 20,
     };
 
     /** @type {Feature|null} */
@@ -77,12 +77,14 @@ export class LevelTestApp {
     this.audioContext = new AudioContext();
     this._songLoader = loadSong(this.level.song, this.audioContext);
     this._songLoader.then(source => this.song = source);
-    this._audio_telemetry = {
+    this._telemetry = {
+      timePositionLag: 0,
       songPosition: 0,
       songDuration: 0,
     };
 
     // Configure dev info
+    this._position_debug_vector = new Vector3();
     sharedDebugPanel.addLoggerCallback(() => this._debug(), 20);
     sharedDebugPanel.addLoggerCallback(() => this.controls._debug(), 10);
     sharedDebugPanel.enable();
@@ -94,7 +96,11 @@ export class LevelTestApp {
       this.vibri.loaded,
       this._songLoader,
     ]).then(() => {
-      this._audio_telemetry.songDuration = this.song.buffer.duration;
+      this._telemetry.songDuration = this.song.buffer.duration;
+      // Move vibri to the start of the level
+      this.vibri.playerModel.position.setX(
+        this.audioContext.getOutputTimestamp().contextTime * this.settings.defaultSpeed,
+      );
       this.song.start();
       this.animate();
     });
@@ -119,11 +125,11 @@ export class LevelTestApp {
         this.vibri.speed = 0;
       } else if (inputs.LOOP) {
         this.vibri.changeAnimation("WALK");
-        this.vibri.speed = 20;
+        this.vibri.speed = this.settings.defaultSpeed;
         this.vibri.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
       } else if (inputs.WAVE) {
         this.vibri.changeAnimation("WALK");
-        this.vibri.speed = 20;
+        this.vibri.speed = this.settings.defaultSpeed;
         this.vibri.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), (3 * Math.PI) / 2);
       }
     }
@@ -143,6 +149,12 @@ export class LevelTestApp {
       // update vibri
       this.vibri.update(timeDelta);
 
+      let songPos = this.audioContext.getOutputTimestamp().contextTime * this.settings.defaultSpeed;
+      this._position_debug_vector.copy(this.vibri.playerModel.position);
+      this._position_debug_vector.setX(songPos);
+      this._telemetry.timePositionLag = this._position_debug_vector.distanceTo(this.vibri.playerModel.position);
+      // this.vibri.playerModel.position.setX(songPos);
+
       // Update camera
       this.camera.left = this.vibri.worldPos.x;
       this.camera.right = this.camera.left + 50;
@@ -150,7 +162,7 @@ export class LevelTestApp {
     }
 
     // update debug info even if paused
-    this._audio_telemetry.songPosition = this.audioContext.getOutputTimestamp().contextTime;
+    this._telemetry.songPosition = this.audioContext.getOutputTimestamp().contextTime;
     sharedDebugPanel.update();
 
     // render even if paused (if eventually we have a pause screen)
@@ -161,9 +173,11 @@ export class LevelTestApp {
     return `<table>
     <tr><th>Paused</th><td>${this.paused}</td></tr>
     <tr><td colspan="2"></td></tr>
-    <tr><th>Vibri Posision</th><td>${this.vibri.worldPos.x.toFixed((3))}</td></tr>
-    <tr><th>Song Position</th><td>${this._audio_telemetry.songPosition.toFixed(4)*10}</td></tr>
-    <tr><th>Song Duration</th><td>${this._audio_telemetry.songDuration.toFixed(1)}</td></tr>
+    <tr><th>Song Duration</th><td>${this._telemetry.songDuration.toFixed(1)}</td></tr>
+    <tr><th>Song Position</th><td>${this._telemetry.songPosition.toFixed(1)}</td></tr>
+    <tr><th>Song Pos * Speed</th><td>${(this._telemetry.songPosition* this.settings.defaultSpeed).toFixed(3) }</td></tr>
+    <tr><th>Vibri Pos</th><td>${this.vibri.worldPos.x.toFixed((3))}</td></tr>
+    <tr><th>Vibri Pos Delta</th><td>${this._telemetry.timePositionLag.toFixed(3)}</td></tr>
     </table>
     `;
   }
