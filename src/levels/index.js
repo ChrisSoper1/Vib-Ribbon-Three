@@ -25,18 +25,9 @@ export class Level {
     this._index = this.features.map(x => x.time);
     this._speed = speed;
     this._vertices = [];
-    this._generateMesh(scene);
   }
 
-  timestampToPosition(timestamp) {
-    return timestamp * this._speed;
-  }
-
-  positionToTimestamp(position) {
-    return position / this._speed;
-  }
-
-  _generateMesh(scene) {
+  generateMesh() {
     this._geometryCount = this.features.reduce((output, curr) => {
       output[curr.geometry_type] += 1;
       return output;
@@ -44,7 +35,7 @@ export class Level {
 
     let distanceGenerated = 0;
     this.features.forEach((feature, index) => {
-      const featureStartPos = this.positionToTimestamp(feature.time);
+      const featureStartPos = feature.time / this._speed;
 
       // generate line from previous feature
       if (distanceGenerated !== 0) {
@@ -59,11 +50,11 @@ export class Level {
       distanceGenerated = featureStartPos + featureWidth;
     });
 
-    let mesh = new Line(
+    this.mesh = new Line(
       new BufferGeometry().setFromPoints(this._vertices),
       new LineBasicMaterial({color: 0xFFFFFF}),
     );
-    scene.add(mesh);
+    return this.mesh;
   }
 }
 

@@ -14,6 +14,9 @@ import {VibRibbonControls} from "./controls";
 import {loadLevel} from './levels';
 import {Player} from "./player";
 
+/**
+ * A basic application for testing level rendering
+ */
 export class LevelTestApp {
   constructor() {
 
@@ -74,7 +77,8 @@ export class LevelTestApp {
 
     this.modelLoaded = this.vibri.generatePlayerModel()
                            .then(playerModel => this.scene.add(playerModel));
-    this.level = loadLevel(this.scene);
+    this.level = loadLevel();
+    this.scene.add(this.level.generateMesh());
   }
 
   start() {
