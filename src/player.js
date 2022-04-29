@@ -15,12 +15,15 @@ export class Player {
   /** @type {THREE.Vector3} */
   worldPos = null;
 
+  score = 0;
+  health = 8;
+  combo = 0;
   animationMap = {};
 
   constructor(speed) {
     this.speed = speed;
     this.worldPos = new Vector3();
-    this.loaded = this.generatePlayerModel()
+    this.loaded = this.generatePlayerModel();
   }
 
   /**

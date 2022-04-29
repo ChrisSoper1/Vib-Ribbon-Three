@@ -110,8 +110,12 @@ export class LevelTestApp {
     this.paused = !this.paused;
     if (this.paused) {
       this.clock.stop();
+      this.audioContext.suspend();
     } else {
+      let songPos = this.audioContext.getOutputTimestamp().contextTime * this.settings.defaultSpeed;
+      this.vibri.playerModel.position.setX(songPos);
       this.clock.start();
+      this.audioContext.resume();
     }
   }
 
@@ -149,12 +153,6 @@ export class LevelTestApp {
       // update vibri
       this.vibri.update(timeDelta);
 
-      let songPos = this.audioContext.getOutputTimestamp().contextTime * this.settings.defaultSpeed;
-      this._position_debug_vector.copy(this.vibri.playerModel.position);
-      this._position_debug_vector.setX(songPos);
-      this._telemetry.timePositionLag = this._position_debug_vector.distanceTo(this.vibri.playerModel.position);
-      // this.vibri.playerModel.position.setX(songPos);
-
       // Update camera
       this.camera.left = this.vibri.worldPos.x;
       this.camera.right = this.camera.left + 50;
@@ -170,6 +168,11 @@ export class LevelTestApp {
   }
 
   _debug() {
+    let songPos = this.audioContext.getOutputTimestamp().contextTime * this.settings.defaultSpeed;
+    this._position_debug_vector.copy(this.vibri.playerModel.position);
+    this._position_debug_vector.setX(songPos);
+    this._telemetry.timePositionLag = this._position_debug_vector.distanceTo(this.vibri.playerModel.position);
+
     return `<table>
     <tr><th>Paused</th><td>${this.paused}</td></tr>
     <tr><td colspan="2"></td></tr>
