@@ -5,8 +5,8 @@ import {
   Scene,
   Vector3,
   WebGLRenderer,
-  AudioLoader, Matrix4, BoxGeometry, MeshBasicMaterial, Spherical,
-  MathUtils, Box3, Box3Helper,
+  AudioLoader,
+  MathUtils,
 } from "three/src/Three";
 
 import Stats from 'three/examples/jsm/libs/stats.module';
@@ -15,7 +15,6 @@ import {VibRibbonControls} from "./controls";
 import {loadLevel} from './levels';
 import {Player} from "./player";
 import {RailsCamera} from "./camera";
-import {Mesh} from "three";
 import {Pane} from "tweakpane";
 
 /**
@@ -36,8 +35,8 @@ export class LevelTestApp {
     defaultSpeed: 20,
     cameraPos: {
       zoom: 1,
-      phi: MathUtils.degToRad(45),
-      theta: MathUtils.degToRad(45),
+      phi:45,
+      theta: 45,
     },
   };
 
@@ -45,13 +44,10 @@ export class LevelTestApp {
     timePositionLag: 0,
     songPosition: 0,
     songDuration: 0,
-    vibriCenter: [0, 0, 0],
   };
 
   /** @type {Feature} */
   featureBuffer;
-
-  matrix4 = new Matrix4();
 
   constructor() {
 
@@ -195,7 +191,6 @@ export class LevelTestApp {
     this._position_debug_vector.setX(songPos);
     this._telemetry.songPosition = this.audioContext.getOutputTimestamp().contextTime;
     this._telemetry.timePositionLag = this._position_debug_vector.distanceTo(this.vibri.playerModel.position);
-    this._telemetry.vibriCenter = this.vibri.center.y.toFixed(3);
 
     return `<table>
     <tr><th>Paused</th><td>${this.paused}</td></tr>
@@ -205,7 +200,6 @@ export class LevelTestApp {
     <tr><th>Song Pos * Speed</th><td>${(this._telemetry.songPosition * this.settings.defaultSpeed).toFixed(3)}</td></tr>
     <tr><th>Vibri Pos</th><td>${this.vibri.worldPos.x.toFixed((3))}</td></tr>
     <tr><th>Vibri Pos Delta</th><td>${this._telemetry.timePositionLag.toFixed(3)}</td></tr>
-    <tr><th>Vibri Center</th><td>${this._telemetry.vibriCenter}</td></tr>
     </table>
     `;
   }
@@ -225,13 +219,13 @@ export class LevelTestApp {
     this.pane.addInput(
       this.settings.cameraPos,
       'phi',
-      {min: 1, max: 179, step: 1},
+      {min: 1, max: 90, step: 1},
     ).on('change', ev => this.camera.spherical.phi = MathUtils.degToRad(ev.value));
 
     this.pane.addInput(
       this.settings.cameraPos,
       'theta',
-      {min: 0, max: 360, step: 1},
+      {min: 0, max: 359, step: 1},
     ).on('change', ev => this.camera.spherical.theta = MathUtils.degToRad(ev.value));
 
   }

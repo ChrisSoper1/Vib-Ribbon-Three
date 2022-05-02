@@ -1,5 +1,9 @@
-import {BoxGeometry, MeshBasicMaterial, Object3D, OrthographicCamera, Spherical, Vector3} from "three/src/Three";
-import {Mesh} from "three";
+import {
+  MathUtils,
+  OrthographicCamera,
+  Spherical,
+  Vector3,
+} from "three/src/Three";
 
 export class RailsCamera extends OrthographicCamera {
   /**
@@ -14,8 +18,8 @@ export class RailsCamera extends OrthographicCamera {
 
     this.spherical = new Spherical(
       radius,
-      phi,
-      theta,
+      MathUtils.degToRad(phi),
+      MathUtils.degToRad(theta),
     );
     this.directionVector = new Vector3();
 
