@@ -1,6 +1,6 @@
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
 import MODEL_FILE from "./assets/Soldier.glb";
-import {AnimationMixer, Vector3} from "three/src/Three";
+import {AnimationMixer, Box3, Vector3} from "three/src/Three";
 
 /**
  * Component for managing and modifying the player character's model, health, animation, state, etc.
@@ -24,6 +24,9 @@ export class Player {
     this.speed = speed;
     this.worldPos = new Vector3();
     this.loaded = this.generatePlayerModel();
+    // bounding box
+    this.bbox = new Box3();
+    this.center = new Vector3();
   }
 
   /**
@@ -96,6 +99,10 @@ export class Player {
 
     //update position
     this.playerModel.translateZ(timeDelta * this.speed * -1);
+
+    // update bounding box for height calculations
+    this.bbox.setFromObject(this.playerModel);
+    this.bbox.getCenter(this.center);
 
     this.playerModel.getWorldPosition(this.worldPos);
   }

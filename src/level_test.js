@@ -1,12 +1,12 @@
 import {
   AmbientLight,
   Clock,
-  OrthographicCamera,
   sRGBEncoding,
   Scene,
   Vector3,
   WebGLRenderer,
-  AudioLoader, Matrix4,
+  AudioLoader, Matrix4, BoxGeometry, MeshBasicMaterial, Spherical,
+  MathUtils, Box3, Box3Helper,
 } from "three/src/Three";
 
 import Stats from 'three/examples/jsm/libs/stats.module';
@@ -15,6 +15,7 @@ import {VibRibbonControls} from "./controls";
 import {loadLevel} from './levels';
 import {Player} from "./player";
 import {RailsCamera} from "./camera";
+import {Mesh} from "three";
 
 /**
  * A basic application for testing level rendering
@@ -38,6 +39,7 @@ export class LevelTestApp {
     timePositionLag: 0,
     songPosition: 0,
     songDuration: 0,
+    vibriCenter: [0,0,0],
   };
 
   /** @type {Feature} */
@@ -76,12 +78,32 @@ export class LevelTestApp {
 
     // vibri
     this.vibri = new Player(this.settings.defaultSpeed);
+
+    // debug
+    this.bboxHelper = new Box3Helper(this.vibri.bbox, 0x00FFFF);
+    this.scene.add(this.bboxHelper);
+
     this.vibri.loaded.then(playerModel => this.scene.add(playerModel));
+
+    this.vibri.loaded.then(playerModel => {
+    })
 
     // camera
     this.camera = new RailsCamera();
 
-    // testBox =
+    this.spherical = new Spherical(
+      10,
+      MathUtils.degToRad(45),
+      MathUtils.degToRad(90),
+    );
+    this.cameraMockDirection = new Vector3();
+    this.cameraMockDirection.setFromSpherical(this.spherical);
+    this.cameraMock = new Mesh(
+      new BoxGeometry(5, 5, 10),
+      new MeshBasicMaterial({color: 0xFFFF00}),
+    );
+
+    this.scene.add(this.cameraMock);
 
     // level
     this.level = loadLevel(this.settings.defaultSpeed);
@@ -187,6 +209,12 @@ export class LevelTestApp {
     this._position_debug_vector.setX(songPos);
     this._telemetry.songPosition = this.audioContext.getOutputTimestamp().contextTime;
     this._telemetry.timePositionLag = this._position_debug_vector.distanceTo(this.vibri.playerModel.position);
+    this._telemetry.vibriCenter = this.vibri.center.y.toFixed(3)
+
+    this.cameraMock.position.copy(this.vibri.center);
+    this.cameraMock.position.addScaledVector(this.cameraMockDirection, 2);
+    this.cameraMock.lookAt(this.vibri.worldPos);
+
 
     return `<table>
     <tr><th>Paused</th><td>${this.paused}</td></tr>
@@ -196,6 +224,7 @@ export class LevelTestApp {
     <tr><th>Song Pos * Speed</th><td>${(this._telemetry.songPosition * this.settings.defaultSpeed).toFixed(3)}</td></tr>
     <tr><th>Vibri Pos</th><td>${this.vibri.worldPos.x.toFixed((3))}</td></tr>
     <tr><th>Vibri Pos Delta</th><td>${this._telemetry.timePositionLag.toFixed(3)}</td></tr>
+    <tr><th>Vibri Center</th><td>${this._telemetry.vibriCenter}</td></tr>
     </table>
     `;
   }

@@ -10,3 +10,6 @@ import {LevelTestApp} from "./level_test";
 
 const app = new LevelTestApp();
 app.start();
+//
+// import {main} from './sandbox/SphericalCameraPositionSandbox';
+// main()
