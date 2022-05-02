@@ -6,7 +6,7 @@ import {
   Scene,
   Vector3,
   WebGLRenderer,
-  AudioLoader,
+  AudioLoader, Matrix4,
 } from "three/src/Three";
 
 import Stats from 'three/examples/jsm/libs/stats.module';
@@ -14,28 +14,38 @@ import {sharedDebugPanel} from "./utils/debug_panel";
 import {VibRibbonControls} from "./controls";
 import {loadLevel} from './levels';
 import {Player} from "./player";
+import {RailsCamera} from "./camera";
 
 /**
  * A basic application for testing level rendering
  */
 export class LevelTestApp {
+
+  // global settings registry - this should be passed into each component
+  settings = {
+    controls: {
+      // these are KeyboardEvent.codes https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code
+      BLOCK: 'ArrowUp',
+      PIT: 'ArrowDown',
+      LOOP: 'ArrowLeft',
+      WAVE: 'ArrowRight',
+      PAUSE: 'Escape',
+    },
+    defaultSpeed: 20,
+  };
+
+  _telemetry = {
+    timePositionLag: 0,
+    songPosition: 0,
+    songDuration: 0,
+  };
+
+  /** @type {Feature} */
+  featureBuffer;
+
+  matrix4 = new Matrix4();
+
   constructor() {
-
-    // global settings registry - this should be passed into each component
-    this.settings = {
-      controls: {
-        // these are KeyboardEvent.codes https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code
-        BLOCK: 'ArrowUp',
-        PIT: 'ArrowDown',
-        LOOP: 'ArrowLeft',
-        WAVE: 'ArrowRight',
-        PAUSE: 'Escape',
-      },
-      defaultSpeed: 20,
-    };
-
-    /** @type {Feature|null} */
-    this.featureBuffer = null;
 
     // region boilerplate
     this.renderer = new WebGLRenderer({antialias: true});
@@ -51,11 +61,6 @@ export class LevelTestApp {
     this.scene = new Scene();
     this.clock = new Clock();
 
-    this.camera = new OrthographicCamera(0, 50, 20, -10, -10000, 10000);
-    this.camera.position.set(0, 0, 5);
-    this.camera.zoom = 0.2;
-    this.camera.lookAt(0, 0, 0);
-    this.camera.updateProjectionMatrix();
     // endregion
 
     // region controls
@@ -69,21 +74,25 @@ export class LevelTestApp {
     // Set the stage
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
 
+    // vibri
     this.vibri = new Player(this.settings.defaultSpeed);
     this.vibri.loaded.then(playerModel => this.scene.add(playerModel));
 
+    // camera
+    this.camera = new RailsCamera();
+
+    // testBox =
+
+    // level
     this.level = loadLevel(this.settings.defaultSpeed);
     this.scene.add(this.level.generateMesh());
+
+    // music
     this.audioContext = new AudioContext();
     this._songLoader = loadSong(this.level.song, this.audioContext);
     this._songLoader.then(source => this.song = source);
-    this._telemetry = {
-      timePositionLag: 0,
-      songPosition: 0,
-      songDuration: 0,
-    };
 
-    // Configure dev info
+    // telemetry
     this._position_debug_vector = new Vector3();
     sharedDebugPanel.addLoggerCallback(() => this._debug(), 20);
     sharedDebugPanel.addLoggerCallback(() => this.controls._debug(), 10);
@@ -139,6 +148,14 @@ export class LevelTestApp {
     }
   }
 
+  /**
+   * Checks if the next feature has changed, then updates the buffer and triggers followup events.
+   * TODO: consider finding a better name for this fn
+   */
+  checkFeatureBuffer() {
+
+  }
+
   animate() {
     requestAnimationFrame(() => this.animate());
     this.render();
@@ -153,14 +170,11 @@ export class LevelTestApp {
       // update vibri
       this.vibri.update(timeDelta);
 
-      // Update camera
-      this.camera.left = this.vibri.worldPos.x;
-      this.camera.right = this.camera.left + 50;
-      this.camera.updateProjectionMatrix();
+      // update camera
+      this.camera.update(this.vibri);
     }
 
     // update debug info even if paused
-    this._telemetry.songPosition = this.audioContext.getOutputTimestamp().contextTime;
     sharedDebugPanel.update();
 
     // render even if paused (if eventually we have a pause screen)
@@ -171,6 +185,7 @@ export class LevelTestApp {
     let songPos = this.audioContext.getOutputTimestamp().contextTime * this.settings.defaultSpeed;
     this._position_debug_vector.copy(this.vibri.playerModel.position);
     this._position_debug_vector.setX(songPos);
+    this._telemetry.songPosition = this.audioContext.getOutputTimestamp().contextTime;
     this._telemetry.timePositionLag = this._position_debug_vector.distanceTo(this.vibri.playerModel.position);
 
     return `<table>
@@ -178,7 +193,7 @@ export class LevelTestApp {
     <tr><td colspan="2"></td></tr>
     <tr><th>Song Duration</th><td>${this._telemetry.songDuration.toFixed(1)}</td></tr>
     <tr><th>Song Position</th><td>${this._telemetry.songPosition.toFixed(1)}</td></tr>
-    <tr><th>Song Pos * Speed</th><td>${(this._telemetry.songPosition* this.settings.defaultSpeed).toFixed(3) }</td></tr>
+    <tr><th>Song Pos * Speed</th><td>${(this._telemetry.songPosition * this.settings.defaultSpeed).toFixed(3)}</td></tr>
     <tr><th>Vibri Pos</th><td>${this.vibri.worldPos.x.toFixed((3))}</td></tr>
     <tr><th>Vibri Pos Delta</th><td>${this._telemetry.timePositionLag.toFixed(3)}</td></tr>
     </table>

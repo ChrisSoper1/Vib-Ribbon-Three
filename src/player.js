@@ -95,7 +95,7 @@ export class Player {
     this.mixer.update(timeDelta);
 
     //update position
-    this.playerModel.translateOnAxis(new Vector3(0, 0, -1), timeDelta * this.speed);
+    this.playerModel.translateZ(timeDelta * this.speed * -1);
 
     this.playerModel.getWorldPosition(this.worldPos);
   }
