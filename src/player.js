@@ -106,4 +106,16 @@ export class Player {
 
     this.playerModel.getWorldPosition(this.worldPos);
   }
+
+  handleStumble() {
+    this.health = this.health - 1;
+  }
+
+  handleScore(type) {
+    if (type === 'dance') {
+
+    } else if (type === 'feature') {
+
+    }
+  }
 }

@@ -44,10 +44,10 @@ export class LevelTestApp {
     timePositionLag: 0,
     songPosition: 0,
     songDuration: 0,
+    timeToNextFeature: 0,
   };
 
-  /** @type {Feature} */
-  featureBuffer;
+  featureBuffer = {feature: null, isComplete: false, isFailed: false};
 
   constructor() {
 
@@ -86,6 +86,7 @@ export class LevelTestApp {
 
     // level
     this.level = loadLevel(this.settings.defaultSpeed);
+    this.featureBuffer.feature = this.level.features.shift();
     this.scene.add(this.level.generateMesh());
 
     // audio
@@ -153,10 +154,24 @@ export class LevelTestApp {
 
   /**
    * Checks if the next feature has changed, then updates the buffer and triggers followup events.
+   *
    * TODO: consider finding a better name for this fn
    */
   checkFeatureBuffer() {
 
+    if (this.featureBuffer.feature.time - this.audioContext.getOutputTimestamp().performanceTime < -100) { // 100ms window
+      // Feature expired
+      if (!this.featureBuffer.isComplete) {
+        // User did not complete the feature
+        if (!this.featureBuffer.isFailed) {
+          // User did not press the wrong input to fail the feature, so fail it now
+          this.vibri.handleStumble();
+        }
+      }
+      this.featureBuffer.feature = this.level.features.shift();
+      this.featureBuffer.isFailed = false;
+      this.featureBuffer.isComplete = false;
+    }
   }
 
   animate() {
@@ -175,6 +190,8 @@ export class LevelTestApp {
 
       // update camera
       this.camera.update(this.vibri);
+
+      this.checkFeatureBuffer();
     }
 
     // update debug info even if paused
@@ -190,16 +207,24 @@ export class LevelTestApp {
     this._position_debug_vector.setX(songPos);
     this._telemetry.songPosition = this.audioContext.getOutputTimestamp().contextTime;
     this._telemetry.timePositionLag = this._position_debug_vector.distanceTo(this.vibri.playerModel.position);
+    this._telemetry.timeToNextFeature = (
+      this.featureBuffer.feature.time - this.audioContext.getOutputTimestamp().performanceTime
+    ).toFixed(0);
 
     return `<table>
     <tr><th>Paused</th><td>${this.paused}</td></tr>
     <tr><td colspan="2"></td></tr>
     <tr><th>Song Duration</th><td>${this._telemetry.songDuration.toFixed(1)}</td></tr>
     <tr><th>Song Position</th><td>${this._telemetry.songPosition.toFixed(1)}</td></tr>
-    <tr><th>Song Pos * Speed</th><td>${(this._telemetry.songPosition * this.settings.defaultSpeed).toFixed(3)}</td></tr>
     <tr><th>Vibri Pos</th><td>${this.vibri.worldPos.x.toFixed((3))}</td></tr>
     <tr><th>Vibri Pos Delta</th><td>${this._telemetry.timePositionLag.toFixed(3)}</td></tr>
-    <tr><th>Camera</th><td>Phi: ${MathUtils.radToDeg(this.camera.spherical.phi).toFixed(0)} | Theta: ${MathUtils.radToDeg(this.camera.spherical.theta).toFixed(0)}</td></tr>
+    <tr><th>Vibri Health</th><td>${this.vibri.health}</td></tr>
+    <tr><th>Next Feature Time</th><td>${this.featureBuffer.feature.time}</td></tr>
+    <tr><th>Performance Time</th><td>${this.audioContext.getOutputTimestamp().performanceTime.toFixed(0)}</td></tr>
+    <tr><th>Next Feature Time</th><td>${this._telemetry.timeToNextFeature}</td></tr>
+    <tr><th>Camera</th><td>Phi: ${MathUtils.radToDeg(this.camera.spherical.phi)
+                                           .toFixed(0)} | Theta: ${MathUtils.radToDeg(this.camera.spherical.theta)
+                                                                            .toFixed(0)}</td></tr>
     </table>
     `;
   }
