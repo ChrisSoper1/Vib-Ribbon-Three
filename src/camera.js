@@ -17,8 +17,7 @@ export class RailsCamera extends OrthographicCamera {
       phi,
       theta,
     );
-    this.dummy = new Object3D();
-    this.dummyDirection = new Vector3();
+    this.directionVector = new Vector3();
 
     const aspect = window.innerWidth / window.innerHeight;
 
@@ -34,11 +33,9 @@ export class RailsCamera extends OrthographicCamera {
 
   /** update the position of the camera */
   update(vibri) {
-    this.dummyDirection.setFromSpherical(this.spherical);
-    this.dummy.position.copy(vibri.center);
-    this.dummy.position.add(this.dummyDirection);
-    // this.dummy.position.addScaledVector(this.dummyDirection, 2);
-    this.position.copy(this.dummy.position);
+    this.directionVector.setFromSpherical(this.spherical);
+    this.position.copy(vibri.center);
+    this.position.add(this.directionVector);
     this.lookAt(vibri.center);
     this.updateProjectionMatrix();
   }
