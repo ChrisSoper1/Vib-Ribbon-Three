@@ -6,7 +6,7 @@ import {
   Vector3,
   WebGLRenderer,
   AudioLoader,
-  MathUtils,
+  MathUtils, BufferGeometry, LineBasicMaterial, Line,
 } from "three/src/Three";
 
 import Stats from 'three/examples/jsm/libs/stats.module';
@@ -35,8 +35,8 @@ export class LevelTestApp {
     defaultSpeed: 20,
     cameraPos: {
       zoom: 1,
-      phi:45,
-      theta: 45,
+      phi: 75,
+      theta: 30,
     },
   };
 
@@ -199,6 +199,7 @@ export class LevelTestApp {
     <tr><th>Song Pos * Speed</th><td>${(this._telemetry.songPosition * this.settings.defaultSpeed).toFixed(3)}</td></tr>
     <tr><th>Vibri Pos</th><td>${this.vibri.worldPos.x.toFixed((3))}</td></tr>
     <tr><th>Vibri Pos Delta</th><td>${this._telemetry.timePositionLag.toFixed(3)}</td></tr>
+    <tr><th>Camera</th><td>Phi: ${MathUtils.radToDeg(this.camera.spherical.phi).toFixed(0)} | Theta: ${MathUtils.radToDeg(this.camera.spherical.theta).toFixed(0)}</td></tr>
     </table>
     `;
   }
@@ -224,8 +225,17 @@ export class LevelTestApp {
     this.pane.addInput(
       this.settings.cameraPos,
       'theta',
-      {min: 0, max: 359, step: 1},
+      {min: -180, max: 180, step: 1},
     ).on('change', ev => this.camera.spherical.theta = MathUtils.degToRad(ev.value));
+
+    this.pane.addSeparator();
+
+    this.pane.addButton({
+      title: "Camera Transition 0",
+    }).on('click', () => this.camera.triggerTransition(0));
+    this.pane.addButton({
+      title: "Camera Transition 1",
+    }).on('click', () => this.camera.triggerTransition(1));
 
   }
 }
