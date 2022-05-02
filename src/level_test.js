@@ -16,6 +16,7 @@ import {loadLevel} from './levels';
 import {Player} from "./player";
 import {RailsCamera} from "./camera";
 import {Mesh} from "three";
+import {Pane} from "tweakpane";
 
 /**
  * A basic application for testing level rendering
@@ -33,13 +34,18 @@ export class LevelTestApp {
       PAUSE: 'Escape',
     },
     defaultSpeed: 20,
+    cameraPos: {
+      zoom: 1,
+      phi: MathUtils.degToRad(45),
+      theta: MathUtils.degToRad(45),
+    },
   };
 
   _telemetry = {
     timePositionLag: 0,
     songPosition: 0,
     songDuration: 0,
-    vibriCenter: [0,0,0],
+    vibriCenter: [0, 0, 0],
   };
 
   /** @type {Feature} */
@@ -79,31 +85,10 @@ export class LevelTestApp {
     // vibri
     this.vibri = new Player(this.settings.defaultSpeed);
 
-    // debug
-    this.bboxHelper = new Box3Helper(this.vibri.bbox, 0x00FFFF);
-    this.scene.add(this.bboxHelper);
-
     this.vibri.loaded.then(playerModel => this.scene.add(playerModel));
-
-    this.vibri.loaded.then(playerModel => {
-    })
 
     // camera
     this.camera = new RailsCamera();
-
-    this.spherical = new Spherical(
-      10,
-      MathUtils.degToRad(45),
-      MathUtils.degToRad(90),
-    );
-    this.cameraMockDirection = new Vector3();
-    this.cameraMockDirection.setFromSpherical(this.spherical);
-    this.cameraMock = new Mesh(
-      new BoxGeometry(5, 5, 10),
-      new MeshBasicMaterial({color: 0xFFFF00}),
-    );
-
-    this.scene.add(this.cameraMock);
 
     // level
     this.level = loadLevel(this.settings.defaultSpeed);
@@ -119,6 +104,7 @@ export class LevelTestApp {
     sharedDebugPanel.addLoggerCallback(() => this._debug(), 20);
     sharedDebugPanel.addLoggerCallback(() => this.controls._debug(), 10);
     sharedDebugPanel.enable();
+    this._init_pane();
 
   }
 
@@ -209,12 +195,7 @@ export class LevelTestApp {
     this._position_debug_vector.setX(songPos);
     this._telemetry.songPosition = this.audioContext.getOutputTimestamp().contextTime;
     this._telemetry.timePositionLag = this._position_debug_vector.distanceTo(this.vibri.playerModel.position);
-    this._telemetry.vibriCenter = this.vibri.center.y.toFixed(3)
-
-    this.cameraMock.position.copy(this.vibri.center);
-    this.cameraMock.position.addScaledVector(this.cameraMockDirection, 2);
-    this.cameraMock.lookAt(this.vibri.worldPos);
-
+    this._telemetry.vibriCenter = this.vibri.center.y.toFixed(3);
 
     return `<table>
     <tr><th>Paused</th><td>${this.paused}</td></tr>
@@ -227,6 +208,32 @@ export class LevelTestApp {
     <tr><th>Vibri Center</th><td>${this._telemetry.vibriCenter}</td></tr>
     </table>
     `;
+  }
+
+  _init_pane() {
+    this.pane = new Pane();
+
+    this.pane.addInput(
+      this.settings.cameraPos,
+      'zoom',
+      {min: 0, max: 10, step: 0.1},
+    ).on('change', ev => {
+      this.camera.zoom = ev.value;
+      this.camera.updateProjectionMatrix();
+    });
+
+    this.pane.addInput(
+      this.settings.cameraPos,
+      'phi',
+      {min: 1, max: 179, step: 1},
+    ).on('change', ev => this.camera.spherical.phi = MathUtils.degToRad(ev.value));
+
+    this.pane.addInput(
+      this.settings.cameraPos,
+      'theta',
+      {min: 0, max: 360, step: 1},
+    ).on('change', ev => this.camera.spherical.theta = MathUtils.degToRad(ev.value));
+
   }
 }
 
