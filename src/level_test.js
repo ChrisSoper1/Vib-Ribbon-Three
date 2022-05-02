@@ -62,9 +62,6 @@ export class LevelTestApp {
     this.stats = Stats();
     document.body.appendChild(this.stats.dom);
 
-    this.scene = new Scene();
-    this.clock = new Clock();
-
     // endregion
 
     // region controls
@@ -76,11 +73,12 @@ export class LevelTestApp {
     // endregion
 
     // Set the stage
+    this.scene = new Scene();
+    this.clock = new Clock();
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
 
     // vibri
     this.vibri = new Player(this.settings.defaultSpeed);
-
     this.vibri.loaded.then(playerModel => this.scene.add(playerModel));
 
     // camera
@@ -90,12 +88,12 @@ export class LevelTestApp {
     this.level = loadLevel(this.settings.defaultSpeed);
     this.scene.add(this.level.generateMesh());
 
-    // music
+    // audio
     this.audioContext = new AudioContext();
     this._songLoader = loadSong(this.level.song, this.audioContext);
     this._songLoader.then(source => this.song = source);
 
-    // telemetry
+    // telemetry and debugging
     this._position_debug_vector = new Vector3();
     sharedDebugPanel.addLoggerCallback(() => this._debug(), 20);
     sharedDebugPanel.addLoggerCallback(() => this.controls._debug(), 10);
@@ -105,6 +103,7 @@ export class LevelTestApp {
   }
 
   start() {
+    // Wait for the song and vibri to load (potentially also level in the future)
     Promise.all([
       this.vibri.loaded,
       this._songLoader,
