@@ -23,15 +23,11 @@ document.body.style.margin = '0px';
 const renderer = new WebGLRenderer();
 const labelRenderer = new CSS2DRenderer();
 
-let scene, camera, stats, controls;
-let arrow, border;
-let gui;
-let movementGroup;
+let scene, camera, stats, controls, gui;
+let arrow, border, movementGroup;
 let gridIndexes;
 
 const clock = new Clock();
-const cameraDistance = 5;
-const aspect = window.innerWidth / window.innerHeight;
 const rulerMaterial = new LineBasicMaterial({color: 0xFFFFFF});
 const borderMaterial = new LineBasicMaterial({color: 0xFFFFFF, linewidth: 5});
 
@@ -39,6 +35,8 @@ const PARAMS = {
   xPos: 0,
   yPos: 0,
   zPos: 0,
+  aspect: window.innerWidth / window.innerHeight,
+  cameraDistance: 5,
   speed: 2,
   nextTick: 0,
   nextTickStart: 0,
@@ -50,43 +48,24 @@ const PARAMS = {
 };
 
 export function main() {
+  makeGui();
   init();
   animate();
 }
 
 function init() {
-  let _paneElem = document.createElement('div');
-  _paneElem.style.zIndex = '1000';
-  _paneElem.style.position = 'absolute';
-  _paneElem.style.top = '0';
-  _paneElem.style.right = '0';
-  document.body.appendChild(_paneElem);
-
-  gui = new Pane({container: _paneElem});
-  gui.addMonitor(PARAMS, 'elapsedTime', {interval: 500});
-  gui.addMonitor(PARAMS, 'xPos', {interval: 500});
-  gui.addMonitor(PARAMS, 'timeDelta');
-  gui.addInput(PARAMS, 'speed', {
-    min: 0,
-    max: 50,
-  });
-  gui.addMonitor(PARAMS, 'indexPos', {interval: 500});
-  gui.addMonitor(PARAMS, 'nextTick', {interval: 500});
-  gui.addMonitor(PARAMS, 'nextTickStart', {interval: 500});
-  gui.addMonitor(PARAMS, 'nextTickEnd', {interval: 500});
-
   scene = new Scene();
   movementGroup = new Group();
   scene.add(movementGroup);
 
   camera = new OrthographicCamera(
-    PARAMS.frustumSize * aspect / -2, PARAMS.frustumSize * aspect / 2,
+    PARAMS.frustumSize * PARAMS.aspect / -2, PARAMS.frustumSize * PARAMS.aspect / 2,
     PARAMS.frustumSize / 2, PARAMS.frustumSize / -2,
     0, 1000,
   );
 
-  // camera = new PerspectiveCamera(75, aspect, 0.1, 1000);
-  camera.position.z = cameraDistance;
+  // camera = new PerspectiveCamera(75, PARAMS.aspect, 0.1, 1000);
+  camera.position.z = PARAMS.cameraDistance;
   camera.lookAt(0, 0, 0);
   movementGroup.add(camera);
 
@@ -120,7 +99,20 @@ let borderFlashing = true;
 
 function animate() {
   requestAnimationFrame(animate);
-  let timeDelta = clock.getDelta();
+  updateFrame(clock.getDelta());
+  updateBorder();
+
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+  stats.update();
+}
+
+/**
+ * Update positions and telemetry
+ *
+ * @param timeDelta
+ */
+function updateFrame(timeDelta) {
   movementGroup.translateX(timeDelta * PARAMS.speed);
   PARAMS.elapsedTime = clock.getElapsedTime() * PARAMS.speed;
   PARAMS.xPos = movementGroup.position.x;
@@ -128,10 +120,17 @@ function animate() {
   PARAMS.zPos = movementGroup.position.z;
   PARAMS.timeDelta = timeDelta;
   PARAMS.nextTick = gridIndexes[PARAMS.indexPos] * PARAMS.speed;
-  // PARAMS.nextTickStart = PARAMS.nextTick - 0.1;
   PARAMS.nextTickStart = PARAMS.nextTick;
   PARAMS.nextTickEnd = PARAMS.nextTick + 0.2;
+  gui.refresh();
+}
 
+/**
+ * Update timing border state
+ *
+ * MUST be run after updateFrame!
+ */
+function updateBorder() {
   if (PARAMS.elapsedTime >= PARAMS.nextTickStart && PARAMS.elapsedTime <= PARAMS.nextTickEnd) {
     borderMaterial.color = new Color(0xFF0000);
     borderFlashing = true;
@@ -142,16 +141,40 @@ function animate() {
       borderMaterial.color = new Color(0xFFFFFF);
     }
   }
-
-  // camera.position.set()
-  gui.refresh();
-  // controls.update();
-  renderer.render(scene, camera);
-  labelRenderer.render(scene, camera);
-  stats.update();
 }
 
-/* instancing: https://codeburst.io/infinite-scene-with-threejs-and-instancedmesh-adc74b8efcf4 */
+/**
+ * Debug GUI initialization
+ */
+function makeGui() {
+  let _paneElem = document.createElement('div');
+  _paneElem.style.zIndex = '1000';
+  _paneElem.style.position = 'absolute';
+  _paneElem.style.top = '0';
+  _paneElem.style.right = '0';
+  document.body.appendChild(_paneElem);
+
+  gui = new Pane({container: _paneElem});
+  gui.addMonitor(PARAMS, 'elapsedTime', {interval: 500});
+  gui.addMonitor(PARAMS, 'xPos', {interval: 500});
+  gui.addMonitor(PARAMS, 'timeDelta');
+  gui.addInput(PARAMS, 'speed', {
+    min: 0,
+    max: 50,
+  });
+  gui.addMonitor(PARAMS, 'indexPos', {interval: 500});
+  gui.addMonitor(PARAMS, 'nextTick', {interval: 500});
+  gui.addMonitor(PARAMS, 'nextTickStart', {interval: 500});
+  gui.addMonitor(PARAMS, 'nextTickEnd', {interval: 500});
+
+}
+
+/**
+ * Background ruler initialization
+ *
+ * later - instancing: https://codeburst.io/infinite-scene-with-threejs-and-instancedmesh-adc74b8efcf4
+ * @returns {*[]}
+ */
 function makeGrid() {
   let bufferGeom = new BufferGeometry().setFromPoints([
     new Vector3(0, -100, 0),
@@ -171,6 +194,11 @@ function makeGrid() {
   return index;
 }
 
+/**
+ * Initialize the flashing timing border
+ *
+ * @returns {LineSegments}
+ */
 function makeBorder() {
   const margin = 1;
   let borderG = new BufferGeometry().setFromPoints([
@@ -187,6 +215,7 @@ function makeBorder() {
 }
 
 /**
+ * Add a label ot an object
  *
  * @param {string} labelText
  * @param {THREE.Object3D} object - object to attach label to (or scene)
@@ -208,9 +237,13 @@ function addLabel(labelText, object) {
   return label;
 }
 
+/**
+ * Window resize handler
+ */
 function onWindowResize() {
   if (camera.isPerspectiveCamera) {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    PARAMS.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = PARAMS.aspect;
     camera.updateProjectionMatrix();
   }
   renderer.setSize(window.innerWidth, window.innerHeight);

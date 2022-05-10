@@ -8,8 +8,9 @@ import {LevelTestApp} from "./level_test";
 // const audioFile = './overcooked2-overworld.mp3';
 // const audioFile = './A History of Bad Men.mp3';
 
-const app = new LevelTestApp();
-app.start();
-//
+// const app = new LevelTestApp();
+// app.start();
+
 // import {main} from './sandbox/SphericalCameraPositionSandbox';
-// main()
+import {main} from './sandbox/TimingSandbox';
+main()
