@@ -84,6 +84,7 @@ export class LevelTestApp {
 
     // camera
     this.camera = new RailsCamera();
+    this.scene.add(this.camera.movementGroup);
 
     // level
     this.level = loadLevel(this.settings.defaultSpeed);
@@ -96,7 +97,8 @@ export class LevelTestApp {
     this._songLoader.then(source => this.song = source);
 
     this.border = new GameBorder(this.camera, this.audioContext);
-    this.scene.add(this.border);
+    this.camera.addToCameraRig(this.border);
+    // this.scene.add(this.border);
 
     // telemetry and debugging
     this._position_debug_vector = new Vector3();

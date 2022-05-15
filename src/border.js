@@ -10,8 +10,8 @@ export class GameBorder extends LineSegments {
     GREY: new Color(0x222222),
   };
 
-  constructor(camera, audioContext, margin = 1, window = 200) {
-    const material = new LineBasicMaterial({color: 0xFFFFFF, linewidth: 5});
+  constructor(camera, audioContext, margin = 10, window = 200) {
+    const material = new LineBasicMaterial({color: 0xFFFFFF, linewidth: 40});
     const geometry = new BufferGeometry().setFromPoints([
       new Vector3(camera.left + margin, camera.top - margin, 0),
       new Vector3(camera.right - margin, camera.top - margin, 0),
