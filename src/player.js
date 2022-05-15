@@ -108,14 +108,16 @@ export class Player {
   }
 
   handleStumble() {
+    this.combo = 0;
     this.health = this.health - 1;
   }
 
   handleScore(type) {
     if (type === 'dance') {
-
+      this.score = this.score + 1;
     } else if (type === 'feature') {
-
+      this.combo = this.combo + 1;
+      this.score = this.score + this.combo;
     }
   }
 }

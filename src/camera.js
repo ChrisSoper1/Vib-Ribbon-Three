@@ -60,12 +60,13 @@ export class RailsCamera extends OrthographicCamera {
 
   /** update the position of the camera */
   update(vibri) {
+    // TODO: This should consider timeDelta to avoid skipping during transitions
     if (this.ACTIVE_TRANSITION !== null) {
       let next_point = this.ACTIVE_TRANSITION.shift();
       if (next_point === undefined) {
         this.ACTIVE_TRANSITION = null;
       } else {
-        this.spherical.setFromVector3(next_point)
+        this.spherical.setFromVector3(next_point);
       }
     }
     this.spherical.makeSafe();

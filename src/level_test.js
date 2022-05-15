@@ -16,6 +16,7 @@ import {loadLevel} from './levels';
 import {Player} from "./player";
 import {RailsCamera} from "./camera";
 import {Pane} from "tweakpane";
+import {GameBorder} from "./border";
 
 /**
  * A basic application for testing level rendering
@@ -94,10 +95,14 @@ export class LevelTestApp {
     this._songLoader = loadSong(this.level.song, this.audioContext);
     this._songLoader.then(source => this.song = source);
 
+    this.border = new GameBorder(this.camera, this.audioContext);
+    this.scene.add(this.border);
+
     // telemetry and debugging
     this._position_debug_vector = new Vector3();
-    sharedDebugPanel.addLoggerCallback(() => this._debug(), 20);
     sharedDebugPanel.addLoggerCallback(() => this.controls._debug(), 10);
+    sharedDebugPanel.addLoggerCallback(() => this._debug(), 20);
+    sharedDebugPanel.addLoggerCallback(() => this.border._debug(), 30);
     sharedDebugPanel.enable();
     this._init_pane();
 
@@ -171,6 +176,7 @@ export class LevelTestApp {
       this.featureBuffer.feature = this.level.features.shift();
       this.featureBuffer.isFailed = false;
       this.featureBuffer.isComplete = false;
+      this.border.scheduleFlash(this.featureBuffer.feature.time);
     }
   }
 
@@ -183,13 +189,16 @@ export class LevelTestApp {
   render() {
     if (!this.paused) {
       // Get the time elapsed since the last frame, used for mixer update
-      let timeDelta = this.clock.getDelta();
+      const timeDelta = this.clock.getDelta();
 
       // update vibri
       this.vibri.update(timeDelta);
 
       // update camera
       this.camera.update(this.vibri);
+
+      // update border
+      this.border.update();
 
       this.checkFeatureBuffer();
     }
