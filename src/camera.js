@@ -34,8 +34,6 @@ export class RailsCamera extends OrthographicCamera {
 
   constructor(radius = 10, phi = 75, theta = 30) {
     super();
-    this.movementGroup = new Group();
-
     this.spherical = new Spherical(
       radius,
       MathUtils.degToRad(phi),
@@ -59,15 +57,6 @@ export class RailsCamera extends OrthographicCamera {
     this.ACTIVE_TRANSITION = this.TRANSITIONS[transition_ix].getSpacedPoints(50);
   }
 
-  /**
-   * Add an object to the camera rig, allowing it to lock to the camera
-   *
-   * @param object
-   */
-  addToCameraRig(object) {
-    this.movementGroup.add(object);
-  }
-
   /** update the position of the camera rig and attached objects */
   update(vibri) {
     // TODO: This should consider timeDelta to avoid skipping during transitions
@@ -84,8 +73,6 @@ export class RailsCamera extends OrthographicCamera {
     this.position.copy(vibri.center);
     this.position.add(this.directionVector);
     this.lookAt(vibri.center);
-    this.movementGroup.position.copy(this.position);
-    this.movementGroup.lookAt(vibri.center);
     this.updateProjectionMatrix();
   }
 }

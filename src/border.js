@@ -10,7 +10,7 @@ export class GameBorder extends LineSegments {
     GREY: new Color(0x222222),
   };
 
-  constructor(camera, audioContext, margin = 10, window = 200) {
+  constructor(camera, margin = 10, window = 200) {
     const material = new LineBasicMaterial({color: 0xFFFFFF, linewidth: 40});
     const geometry = new BufferGeometry().setFromPoints([
       new Vector3(camera.left + margin, camera.top - margin, 0),
@@ -23,12 +23,8 @@ export class GameBorder extends LineSegments {
       new Vector3(camera.left + margin, camera.top - margin, 0),
     ]);
     super(geometry, material);
-    this._geometry = geometry;
-    this._material = material;
-    this._material.color = this._COLORS.GREY;
-
+    this.material.color = this._COLORS.GREY;
     this.timingWindow = window;
-    this.audioContext = audioContext;
     this.nextColor = this._COLORS.WHITE;
   }
 
@@ -47,7 +43,7 @@ export class GameBorder extends LineSegments {
   _flash() {
     if (!this._FLASHING) {
       this._FLASHING = true;
-      this._material.color = this.nextColor;
+      this.material.color = this.nextColor;
     }
   }
 
@@ -59,7 +55,7 @@ export class GameBorder extends LineSegments {
   _unflash() {
     if (this._FLASHING) {
       this._FLASHING = false;
-      this._material.color = this._COLORS.GREY;
+      this.material.color = this._COLORS.GREY;
     }
   }
 
@@ -76,8 +72,7 @@ export class GameBorder extends LineSegments {
   /**
    * Update on each frame
    */
-  update() {
-    const elapsedTime = this.audioContext.getOutputTimestamp().performanceTime;
+  update(elapsedTime) {
     if (elapsedTime >= this.flashStart && elapsedTime <= this.flashEnd) {
       this._flash();
     } else if (this._FLASHING) {

@@ -13,10 +13,8 @@ import Stats from 'three/examples/jsm/libs/stats.module';
 import {sharedDebugPanel} from "./utils/debug_panel";
 import {VibRibbonControls} from "./controls";
 import {loadLevel} from './levels';
-import {Player} from "./player";
-import {RailsCamera} from "./camera";
 import {Pane} from "tweakpane";
-import {GameBorder} from "./border";
+import {Dolly} from "./dolly";
 
 /**
  * A basic application for testing level rendering
@@ -73,32 +71,31 @@ export class LevelTestApp {
     this.controls.addEventListener('input', (event) => this.handleInput(event));
     // endregion
 
+    // Create an audio context for the page
+    this.audioContext = new AudioContext();
+
     // Set the stage
     this.scene = new Scene();
     this.clock = new Clock();
     this.scene.add(new AmbientLight(0xFFFFFF, 0.8));
 
-    // vibri
-    this.vibri = new Player(this.settings.defaultSpeed);
-    this.vibri.loaded.then(playerModel => this.scene.add(playerModel));
+    // Create the main container/dolly for moving through the level
+    this.dolly = new Dolly(this.settings);
+    this.scene.add(this.dolly);
 
-    // camera
-    this.camera = new RailsCamera();
-    this.scene.add(this.camera.movementGroup);
+    // get references to the objects in the dolly
+    this.vibri = this.dolly.vibri;
+    this.camera = this.dolly.camera;
+    this.border = this.dolly.border;
 
-    // level
+    // Load level
     this.level = loadLevel(this.settings.defaultSpeed);
     this.featureBuffer.feature = this.level.features.shift();
     this.scene.add(this.level.generateMesh());
 
-    // audio
-    this.audioContext = new AudioContext();
+    // Cue the song
     this._songLoader = loadSong(this.level.song, this.audioContext);
     this._songLoader.then(source => this.song = source);
-
-    this.border = new GameBorder(this.camera, this.audioContext);
-    this.camera.addToCameraRig(this.border);
-    // this.scene.add(this.border);
 
     // telemetry and debugging
     this._position_debug_vector = new Vector3();
@@ -143,15 +140,19 @@ export class LevelTestApp {
     if (!this.paused) {
       let inputs = event.target;
       if (inputs.BLOCK) {
+        this.border.flashFail()
         this.vibri.changeAnimation("RUN");
       } else if (inputs.PIT) {
+        this.border.flashFail()
         this.vibri.changeAnimation("IDLE");
         this.vibri.speed = 0;
       } else if (inputs.LOOP) {
+        this.border.flashFail()
         this.vibri.changeAnimation("WALK");
         this.vibri.speed = this.settings.defaultSpeed;
         this.vibri.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
       } else if (inputs.WAVE) {
+        this.border.flashFail()
         this.vibri.changeAnimation("WALK");
         this.vibri.speed = this.settings.defaultSpeed;
         this.vibri.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), (3 * Math.PI) / 2);
@@ -192,16 +193,8 @@ export class LevelTestApp {
     if (!this.paused) {
       // Get the time elapsed since the last frame, used for mixer update
       const timeDelta = this.clock.getDelta();
-
-      // update vibri
-      this.vibri.update(timeDelta);
-
-      // update camera
-      this.camera.update(this.vibri);
-
-      // update border
-      this.border.update();
-
+      const elapsedTime = this.audioContext.getOutputTimestamp().performanceTime;
+      this.dolly.update(timeDelta, elapsedTime)
       this.checkFeatureBuffer();
     }
 
