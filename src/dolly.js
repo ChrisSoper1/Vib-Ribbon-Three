@@ -14,19 +14,41 @@ export class Dolly extends Group {
   border;
   vibri;
   camera;
+  speed;
 
   constructor(settings) {
     super();
-    this.vibri = new Player(settings.defaultSpeed);
-    this.vibri.loaded.then(playerModel => this.add(playerModel));
     this.speed = settings.defaultSpeed;
+    this.vibri = new Player(this.speed);
+    this.vibri.loaded.then(playerModel => this.add(playerModel));
 
     this.camera = new RailsCamera();
     this.add(this.camera);
 
     this.border = new GameBorder(this.camera);
     this.add(this.border);
+  }
 
+  /** Return an object representing the state of this instance */
+  get_telemetry() {
+    return {
+      speed: this.speed,
+      vibri: this.vibri.get_telemetry(),
+      camera: this.camera.get_telemetry(),
+      border: this.border.get_telemetry(),
+    };
+  }
+
+  _debug() {
+    // this is definitely not right, but a step
+    const t = this.get_telemetry();
+    return `
+    <table>
+    ${this.vibri._debug()}
+    ${this.camera._debug()}
+    ${this.border._debug()}
+    </table>
+    `;
   }
 
   /**

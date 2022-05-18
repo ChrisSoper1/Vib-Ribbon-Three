@@ -6,27 +6,60 @@ import {AnimationMixer, Box3, Vector3} from "three/src/Three";
  * Component for managing and modifying the player character's model, health, animation, state, etc.
  */
 export class Player {
-  /** @type {THREE.Object3D} */
-  playerModel = null;
-
-  /** @type {THREE.AnimationMixer} */
-  mixer = null;
-
+  /** @type {Promise<THREE.Object3D>} */
+  loaded;
+  /** @type {boolean} - a boolean flag which can be returned in telemetry */
+  __isLoadedBool = false;
+  /** @type {THREE.Box3} */
+  bbox;
   /** @type {THREE.Vector3} */
-  worldPos = null;
+  center;
+  /** @type {THREE.Vector3} */
+  worldPos;
+  /** @type {THREE.Object3D} */
+  playerModel;
+  /** @type {THREE.AnimationMixer} */
+  mixer;
+  /** @type {THREE.AnimationClip} */
+  activeAnimation;
 
+  /** @type {number} */
+  speed;
   score = 0;
   health = 8;
   combo = 0;
-  animationMap = {};
+
+  animationMap = {'IDLE': null, 'WALK': null, 'RUN': null};
 
   constructor(speed) {
+    this.__isLoadedBool = false;
     this.speed = speed;
     this.worldPos = new Vector3();
     this.loaded = this.generatePlayerModel();
-    // bounding box
     this.bbox = new Box3();
     this.center = new Vector3();
+  }
+
+  /** Return an object representing the state of this instance */
+  get_telemetry() {
+    return {
+      score: this.score,
+      combo: this.combo,
+      health: this.health,
+      bbox: this.bbox,
+      center: this.center,
+      loaded: this.loaded,
+      worldPos: this.worldPos,
+    };
+  }
+
+  _debug() {
+    const t = this.get_telemetry();
+    return `
+    <tr><th colspan="2" class="section">Vibri</th></tr>
+    <tr><th>Position</th><td>${t.worldPos.x.toFixed(3)}</td></tr>
+    <tr><th>Health</th><td>${t.health}</td></tr>
+    `;
   }
 
   /**
@@ -41,11 +74,11 @@ export class Player {
 
     // Add a .then to the handling chain, and then set result to the new chain
     result = result.then(gltf => {
+      // TODO: load real model + animations
       this.playerModel = gltf.scene;
       this.playerModel.scale.set(12, 12, 12);
       this.playerModel.position.set(0, 0, 0);
       this.playerModel.lookAt(-1, 0, 0);
-
       this.playerModel.traverse(object => object.castShadow = object.isMesh);
 
       this.mixer = new AnimationMixer(this.playerModel);
@@ -60,6 +93,7 @@ export class Player {
       this.activeAnimation = this.animationMap["WALK"];
       this.activeAnimation.play();
 
+      this.__isLoadedBool = true;
       return this.playerModel;
     });
 
@@ -120,4 +154,5 @@ export class Player {
       this.score = this.score + this.combo;
     }
   }
+
 }

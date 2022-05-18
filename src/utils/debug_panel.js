@@ -1,13 +1,36 @@
 /** @module debug_panel */
 
+// language=css
+const __CSS_STYLES = `
+    .debug-panel {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background-color: #CCCCCC;
+        font-size: 0.7rem;
+    }
+    .debug-panel .section {
+        text-align: center;
+        text-decoration: underline;
+    }
+`;
+
+/* this uses a promise to load the CSS once, then immediately resolve every time after */
+const stylePromise = new Promise(resolve => {
+  const style = document.createElement('style');
+  style.innerHTML = __CSS_STYLES;
+  document.getElementsByTagName('head')[0].appendChild(style);
+  resolve(style);
+});
+
 export class DebugPanel {
   constructor() {
     this.__loggers = [];
+
+    // Load the css if it has not already
+    stylePromise.then();
     this.div = document.createElement('div');
-    this.div.style.position = 'absolute';
-    this.div.style.bottom = '0';
-    this.div.style.right = '0';
-    this.div.style.backgroundColor = '#CCCCCC'
+    this.div.classList.add('debug-panel');
   }
 
   enable() {
@@ -21,7 +44,7 @@ export class DebugPanel {
   update() {
     let content = '';
     this.__loggers.forEach(callback => {
-      content += '<div>';
+      content += '<div class="logger">';
       content += callback();
       content += '</div>';
     });

@@ -101,7 +101,7 @@ export class LevelTestApp {
     this._position_debug_vector = new Vector3();
     sharedDebugPanel.addLoggerCallback(() => this.controls._debug(), 10);
     sharedDebugPanel.addLoggerCallback(() => this._debug(), 20);
-    sharedDebugPanel.addLoggerCallback(() => this.border._debug(), 30);
+    sharedDebugPanel.addLoggerCallback(() => this.dolly._debug(), 30);
     sharedDebugPanel.enable();
     this._init_pane();
 
@@ -209,26 +209,20 @@ export class LevelTestApp {
     let songPos = this.audioContext.getOutputTimestamp().contextTime * this.settings.defaultSpeed;
     this._position_debug_vector.copy(this.vibri.playerModel.position);
     this._position_debug_vector.setX(songPos);
-    this._telemetry.timestamp = this.audioContext.getOutputTimestamp();
     this._telemetry.timePositionLag = this._position_debug_vector.distanceTo(this.vibri.playerModel.position);
+    this._telemetry.timestamp = this.audioContext.getOutputTimestamp();
     this._telemetry.timeToNextFeature = (
       this.featureBuffer.feature.time - this.audioContext.getOutputTimestamp().performanceTime
     ).toFixed(0);
 
     return `<table>
     <tr><th>Paused</th><td>${this.paused}</td></tr>
-    <tr><td colspan="2"></td></tr>
     <tr><th>Song Duration</th><td>${this._telemetry.songDuration.toFixed(1)}</td></tr>
     <tr><th>Song Position</th><td>${this._telemetry.timestamp.contextTime.toFixed(1)}</td></tr>
-    <tr><th>Vibri Pos</th><td>${this.vibri.worldPos.x.toFixed((3))}</td></tr>
     <tr><th>Vibri Pos Delta</th><td>${this._telemetry.timePositionLag.toFixed(3)}</td></tr>
-    <tr><th>Vibri Health</th><td>${this.vibri.health}</td></tr>
     <tr><th>Next Feature Time</th><td>${this.featureBuffer.feature.time}</td></tr>
     <tr><th>Performance Time</th><td>${this._telemetry.timestamp.performanceTime.toFixed(0)}</td></tr>
-    <tr><th>Next Feature Time</th><td>${this._telemetry.timeToNextFeature}</td></tr>
-    <tr><th>Camera</th><td>Phi: ${MathUtils.radToDeg(this.camera.spherical.phi)
-                                           .toFixed(0)} | Theta: ${MathUtils.radToDeg(this.camera.spherical.theta)
-                                                                            .toFixed(0)}</td></tr>
+    <tr><th>T-Minus Feature</th><td>${this._telemetry.timeToNextFeature}</td></tr>
     </table>
     `;
   }

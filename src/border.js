@@ -28,6 +28,14 @@ export class GameBorder extends LineSegments {
     this.nextColor = this._COLORS.WHITE;
   }
 
+  get_telemetry() {
+    return {
+      flashStart: this.flashStart,
+      flashEnd: this.flashEnd,
+      flashing: this._FLASHING,
+    };
+  }
+
   /**
    * The next flash will be red
    */
@@ -81,11 +89,12 @@ export class GameBorder extends LineSegments {
   }
 
   _debug() {
-    return `<table>
-    <tr><th colspan="2" style="text-align: center; text-decoration: underline">Border</th></tr>
-    <tr><th>flashStart</th><td>${this.flashStart}</td></tr>
-    <tr><th>flashEnd</th><td>${this.flashEnd}</td></tr>
-    <tr><th>flashing</th><td>${this._FLASHING}</td></tr>
-    </table>`;
+    const t = this.get_telemetry();
+    return `
+    <tr><th colspan="2" class="section">Border</th></tr>
+    <tr><th>flashStart</th><td>${t.flashStart}</td></tr>
+    <tr><th>flashEnd</th><td>${t.flashEnd}</td></tr>
+    <tr><th>flashing</th><td>${t.flashing}</td></tr>
+    `;
   }
 }

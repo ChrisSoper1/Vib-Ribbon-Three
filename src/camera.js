@@ -7,6 +7,8 @@ import {
 } from "three/src/Three";
 
 const d2r = MathUtils.degToRad;
+const vecFromSpherical = (...[r, phi, theta]) => new Vector3().setFromSphericalCoords(r, d2r(phi), d2r(theta));
+const makeCurve = (...points) => new CubicBezierCurve3(...points.map(vecFromSpherical));
 
 export class RailsCamera extends OrthographicCamera {
   /**
@@ -14,23 +16,22 @@ export class RailsCamera extends OrthographicCamera {
    *
    */
   TRANSITIONS = [
-    new CubicBezierCurve3( // LTR CURVE
-      new Vector3().setFromSphericalCoords(10, d2r(90), d2r(0)),
-      new Vector3().setFromSphericalCoords(10, d2r(90), d2r(60)),
-      new Vector3().setFromSphericalCoords(10, d2r(90), d2r(90)),
-      new Vector3().setFromSphericalCoords(10, d2r(90), d2r(180)),
-    ),
-    new CubicBezierCurve3( // ISO LEFT TO ISO RIGHT CURVE
-      new Vector3().setFromSphericalCoords(10, d2r(75), d2r(45)),
-      new Vector3().setFromSphericalCoords(10, d2r(75), d2r(105)),
-      new Vector3().setFromSphericalCoords(10, d2r(75), d2r(165)),
-      new Vector3().setFromSphericalCoords(10, d2r(75), d2r(225)),
-    ),
+    makeCurve([10, 90, 0], [10, 90, 60], [10, 90, 90], [10, 90, 180]),
+    makeCurve([10, 75, 45], [10, 75, 105], [10, 75, 165], [10, 75, 225]),
   ];
-
-  ACTIVE_TRANSITION = null;
-
   frustumSize = 150;
+  activeTransition;
+  left;
+  right;
+  top;
+  bottom;
+  near;
+  far;
+
+  /** @type {THREE.Spherical} */
+  spherical;
+  /** @type {THREE.Vector3} */
+  directionVector;
 
   constructor(radius = 10, phi = 75, theta = 30) {
     super();
@@ -53,17 +54,44 @@ export class RailsCamera extends OrthographicCamera {
     this.updateProjectionMatrix();
   }
 
+  /** Return an object representing the state of this instance */
+  get_telemetry() {
+    return {
+      left: this.left,
+      right: this.right,
+      top: this.top,
+      bottom: this.bottom,
+      near: this.near,
+      far: this.far,
+      position: this.position,
+      directionVector: this.directionVector,
+      spherical: this.spherical,
+    };
+  }
+
+  _debug() {
+    // todo: finish this telemetry mess
+    const t = this.get_telemetry();
+    return `
+    <tr><th colspan="2" class="section">Camera</th></tr>
+    <tr><th>Position</th><td>
+    Phi: ${MathUtils.radToDeg(t.spherical.phi).toFixed(0)} |
+    Theta: ${MathUtils.radToDeg(t.spherical.theta).toFixed(0)}
+    </td></tr>
+    `;
+  }
+
   triggerTransition(transition_ix) {
-    this.ACTIVE_TRANSITION = this.TRANSITIONS[transition_ix].getSpacedPoints(50);
+    this.activeTransition = this.TRANSITIONS[transition_ix].getSpacedPoints(50);
   }
 
   /** update the position of the camera rig and attached objects */
   update(vibri) {
     // TODO: This should consider timeDelta to avoid skipping during transitions
-    if (this.ACTIVE_TRANSITION !== null) {
-      let next_point = this.ACTIVE_TRANSITION.shift();
+    if (this.activeTransition !== undefined) {
+      let next_point = this.activeTransition.shift();
       if (next_point === undefined) {
-        this.ACTIVE_TRANSITION = null;
+        this.activeTransition = undefined;
       } else {
         this.spherical.setFromVector3(next_point);
       }
