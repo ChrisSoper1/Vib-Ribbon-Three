@@ -7,7 +7,7 @@ import {
 } from "three/src/Three";
 
 const d2r = MathUtils.degToRad;
-const vecFromSpherical = (...[r, phi, theta]) => new Vector3().setFromSphericalCoords(r, d2r(phi), d2r(theta));
+const vecFromSpherical = ([r, phi, theta]) => new Vector3().setFromSphericalCoords(r, d2r(phi), d2r(theta));
 const makeCurve = (...points) => new CubicBezierCurve3(...points.map(vecFromSpherical));
 
 export class RailsCamera extends OrthographicCamera {
@@ -57,28 +57,18 @@ export class RailsCamera extends OrthographicCamera {
   /** Return an object representing the state of this instance */
   get_telemetry() {
     return {
-      left: this.left,
-      right: this.right,
-      top: this.top,
-      bottom: this.bottom,
-      near: this.near,
-      far: this.far,
-      position: this.position,
-      directionVector: this.directionVector,
-      spherical: this.spherical,
+      // left: this.left,
+      // right: this.right,
+      // top: this.top,
+      // bottom: this.bottom,
+      // near: this.near,
+      // far: this.far,
+      // position: this.position,
+      //
+      // spherical: this.spherical, // todo build a helper for visualizing this
+      phi: MathUtils.radToDeg(this.spherical.phi).toFixed(0),
+      theta: MathUtils.radToDeg(this.spherical.theta).toFixed(0),
     };
-  }
-
-  _debug() {
-    // todo: finish this telemetry mess
-    const t = this.get_telemetry();
-    return `
-    <tr><th colspan="2" class="section">Camera</th></tr>
-    <tr><th>Position</th><td>
-    Phi: ${MathUtils.radToDeg(t.spherical.phi).toFixed(0)} |
-    Theta: ${MathUtils.radToDeg(t.spherical.theta).toFixed(0)}
-    </td></tr>
-    `;
   }
 
   triggerTransition(transition_ix) {

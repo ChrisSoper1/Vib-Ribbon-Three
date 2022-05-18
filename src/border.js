@@ -87,14 +87,4 @@ export class GameBorder extends LineSegments {
       this._unflash();
     }
   }
-
-  _debug() {
-    const t = this.get_telemetry();
-    return `
-    <tr><th colspan="2" class="section">Border</th></tr>
-    <tr><th>flashStart</th><td>${t.flashStart}</td></tr>
-    <tr><th>flashEnd</th><td>${t.flashEnd}</td></tr>
-    <tr><th>flashing</th><td>${t.flashing}</td></tr>
-    `;
-  }
 }

@@ -44,9 +44,9 @@ export class Dolly extends Group {
     const t = this.get_telemetry();
     return `
     <table>
-    ${this.vibri._debug()}
-    ${this.camera._debug()}
-    ${this.border._debug()}
+    ${formatter(['Vibri', t.vibri])}
+    ${formatter(['Camera', t.camera])}
+    ${formatter(['Border', t.border])}
     </table>
     `;
   }
@@ -66,3 +66,11 @@ export class Dolly extends Group {
     this.border.lookAt(this.vibri.center);
   }
 }
+
+const rowMapper = ([key, val]) => `<tr><th>${key}</th><td>${val}</td></tr>`;
+
+const formatter = ([title, data]) => {
+  return [`<tr><th colspan="2" class="section">${title}</th></tr>`]
+    .concat(Object.entries(data).map(rowMapper))
+    .join('');
+};

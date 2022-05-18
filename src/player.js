@@ -43,23 +43,16 @@ export class Player {
   /** Return an object representing the state of this instance */
   get_telemetry() {
     return {
+      // bbox: this.bbox,
+      // center: this.center,
+      // loaded: this.loaded,
+      // worldPos: this.worldPos,
+
       score: this.score,
       combo: this.combo,
       health: this.health,
-      bbox: this.bbox,
-      center: this.center,
-      loaded: this.loaded,
-      worldPos: this.worldPos,
+      position: this.worldPos.x.toFixed(3),
     };
-  }
-
-  _debug() {
-    const t = this.get_telemetry();
-    return `
-    <tr><th colspan="2" class="section">Vibri</th></tr>
-    <tr><th>Position</th><td>${t.worldPos.x.toFixed(3)}</td></tr>
-    <tr><th>Health</th><td>${t.health}</td></tr>
-    `;
   }
 
   /**

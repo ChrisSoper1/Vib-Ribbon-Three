@@ -6,7 +6,6 @@ import {
   Vector3,
   WebGLRenderer,
   AudioLoader,
-  MathUtils, BufferGeometry, LineBasicMaterial, Line,
 } from "three/src/Three";
 
 import Stats from 'three/examples/jsm/libs/stats.module';
@@ -140,19 +139,19 @@ export class LevelTestApp {
     if (!this.paused) {
       let inputs = event.target;
       if (inputs.BLOCK) {
-        this.border.flashFail()
+        this.border.flashFail();
         this.vibri.changeAnimation("RUN");
       } else if (inputs.PIT) {
-        this.border.flashFail()
+        this.border.flashFail();
         this.vibri.changeAnimation("IDLE");
         this.vibri.speed = 0;
       } else if (inputs.LOOP) {
-        this.border.flashFail()
+        this.border.flashFail();
         this.vibri.changeAnimation("WALK");
         this.vibri.speed = this.settings.defaultSpeed;
         this.vibri.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), Math.PI / 2);
       } else if (inputs.WAVE) {
-        this.border.flashFail()
+        this.border.flashFail();
         this.vibri.changeAnimation("WALK");
         this.vibri.speed = this.settings.defaultSpeed;
         this.vibri.playerModel.setRotationFromAxisAngle(new Vector3(0, 1, 0), (3 * Math.PI) / 2);
@@ -194,7 +193,7 @@ export class LevelTestApp {
       // Get the time elapsed since the last frame, used for mixer update
       const timeDelta = this.clock.getDelta();
       const elapsedTime = this.audioContext.getOutputTimestamp().performanceTime;
-      this.dolly.update(timeDelta, elapsedTime)
+      this.dolly.update(timeDelta, elapsedTime);
       this.checkFeatureBuffer();
     }
 
@@ -238,18 +237,6 @@ export class LevelTestApp {
       this.camera.zoom = ev.value;
       this.camera.updateProjectionMatrix();
     });
-
-    this.pane.addInput(
-      this.settings.cameraPos,
-      'phi',
-      {min: 1, max: 90, step: 1},
-    ).on('change', ev => this.camera.spherical.phi = MathUtils.degToRad(ev.value));
-
-    this.pane.addInput(
-      this.settings.cameraPos,
-      'theta',
-      {min: -180, max: 180, step: 1},
-    ).on('change', ev => this.camera.spherical.theta = MathUtils.degToRad(ev.value));
 
     this.pane.addSeparator();
 
