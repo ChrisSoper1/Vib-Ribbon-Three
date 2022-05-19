@@ -124,9 +124,6 @@ export class Player {
     // Update the animation mixer
     this.mixer.update(timeDelta);
 
-    //update position
-    this.playerModel.translateZ(timeDelta * this.speed * -1);
-
     // update bounding box for height calculations
     this.bbox.setFromObject(this.playerModel);
     this.bbox.getCenter(this.center);

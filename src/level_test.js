@@ -242,10 +242,10 @@ export class LevelTestApp {
 
     this.pane.addButton({
       title: "Camera Transition 0",
-    }).on('click', () => this.camera.triggerTransition(0));
+    }).on('click', () => this.dolly.triggerCameraTransition(0));
     this.pane.addButton({
       title: "Camera Transition 1",
-    }).on('click', () => this.camera.triggerTransition(1));
+    }).on('click', () => this.dolly.triggerCameraTransition(1));
 
   }
 }
